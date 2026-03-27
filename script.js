@@ -1,1755 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#007AFF">
-<title>小摇筛选 v26.1.00</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<!-- 加载遮罩 -->
-<div class="loading-mask" id="loadingMask">
-  <div class="loading-spinner"></div>
-  <div class="loading-text">正在加载...</div>
-</div>
 
-<!-- 固定顶部展示区 -->
-<div class="top-box" id="topBox" role="region" aria-label="筛选结果展示">
-  <div class="top-card">
-    <div class="top-title">
-      <span>符合条件：<span id="resultCount" aria-live="polite">0</span> 个</span>
-      <span>v26.0.01</span>
-    </div>
-    <div id="resultNums" class="top-nums" role="list"></div>
-  </div>
-</div>
-
-<!-- 主体内容区 -->
-<div class="body-box">
-  <div class="page active" id="filterPage">
-    <!-- 顶部操作栏 -->
-    <div class="btn-bar" role="group" aria-label="全局操作">
-      <button class="btn-line" data-action="selectAllFilters" aria-label="全选所有筛选条件">一键全选</button>
-      <button class="btn-line" data-action="clearAllFilters" aria-label="清除所有筛选条件">一键清除</button>
-      <button class="btn-line" data-action="saveFilterPrompt" aria-label="保存当前筛选方案">保存方案</button>
-    </div>
-
-    <!-- 我的筛选方案 -->
-    <div class="card" id="mod-saved">
-      <div class="card-header">
-        <h2>我的筛选方案</h2>
-        <button class="btn-mini red" data-action="clearAllSavedFilters" aria-label="清空所有保存的方案">清空全部</button>
-      </div>
-      <div class="card-body">
-        <div id="filterList" class="filter-save-list" role="list"></div>
-      </div>
-    </div>
-
-    <!-- 生肖筛选模块 -->
-    <div class="card" id="mod-zodiac">
-      <div class="card-header">
-        <h2>生肖</h2>
-        <div class="btn-group" role="group" aria-label="生肖操作">
-          <button class="btn-mini" data-action="resetGroup" data-group="zodiac">重置</button>
-          <button class="btn-mini" data-action="selectGroup" data-group="zodiac">全选</button>
-          <button class="btn-mini" data-action="invertGroup" data-group="zodiac">反选</button>
-          <button class="btn-mini red" data-action="clearGroup" data-group="zodiac">清除</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tags" data-group="zodiac" id="zodiacTags" role="group" aria-label="生肖选项"></div>
-      </div>
-    </div>
-
-    <!-- 波色筛选模块 -->
-    <div class="card" id="mod-color">
-      <div class="card-header">
-        <h2>波色</h2>
-        <div class="btn-group" role="group" aria-label="波色操作">
-          <button class="btn-mini" data-action="resetGroup" data-group="color">重置</button>
-          <button class="btn-mini" data-action="selectGroup" data-group="color">全选</button>
-          <button class="btn-mini" data-action="invertGroup" data-group="color">反选</button>
-          <button class="btn-mini red" data-action="clearGroup" data-group="color">清除</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tags" data-group="color" role="group" aria-label="波色选项">
-          <div class="tag" data-value="红" data-group="color">红</div>
-          <div class="tag" data-value="蓝" data-group="color">蓝</div>
-          <div class="tag" data-value="绿" data-group="color">绿</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 波色单双筛选模块 -->
-    <div class="card" id="mod-colorsx">
-      <div class="card-header">
-        <h2>波色单双</h2>
-        <div class="btn-group" role="group" aria-label="波色单双操作">
-          <button class="btn-mini" data-action="resetGroup" data-group="colorsx">重置</button>
-          <button class="btn-mini" data-action="selectGroup" data-group="colorsx">全选</button>
-          <button class="btn-mini" data-action="invertGroup" data-group="colorsx">反选</button>
-          <button class="btn-mini red" data-action="clearGroup" data-group="colorsx">清除</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tags" data-group="colorsx" role="group" aria-label="波色单双选项">
-          <div class="tag" data-value="红单" data-group="colorsx">红单</div>
-          <div class="tag" data-value="红双" data-group="colorsx">红双</div>
-          <div class="tag" data-value="蓝单" data-group="colorsx">蓝单</div>
-          <div class="tag" data-value="蓝双" data-group="colorsx">蓝双</div>
-          <div class="tag" data-value="绿单" data-group="colorsx">绿单</div>
-          <div class="tag" data-value="绿双" data-group="colorsx">绿双</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 家禽野兽筛选模块 -->
-    <div class="card" id="mod-type">
-      <div class="card-header">
-        <h2>家禽野兽</h2>
-        <div class="btn-group" role="group" aria-label="家禽野兽操作">
-          <button class="btn-mini" data-action="resetGroup" data-group="type">重置</button>
-          <button class="btn-mini" data-action="selectGroup" data-group="type">全选</button>
-          <button class="btn-mini" data-action="invertGroup" data-group="type">反选</button>
-          <button class="btn-mini red" data-action="clearGroup" data-group="type">清除</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tags" data-group="type" role="group" aria-label="家禽野兽选项">
-          <div class="tag" data-value="家禽" data-group="type">家禽</div>
-          <div class="tag" data-value="野兽" data-group="type">野兽</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 五行筛选模块 -->
-    <div class="card" id="mod-element">
-      <div class="card-header">
-        <h2>五行</h2>
-        <div class="btn-group" role="group" aria-label="五行操作">
-          <button class="btn-mini" data-action="resetGroup" data-group="element">重置</button>
-          <button class="btn-mini" data-action="selectGroup" data-group="element">全选</button>
-          <button class="btn-mini" data-action="invertGroup" data-group="element">反选</button>
-          <button class="btn-mini red" data-action="clearGroup" data-group="element">清除</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tags" data-group="element" role="group" aria-label="五行选项">
-          <div class="tag" data-value="金" data-group="element">金</div>
-          <div class="tag" data-value="木" data-group="element">木</div>
-          <div class="tag" data-value="水" data-group="element">水</div>
-          <div class="tag" data-value="火" data-group="element">火</div>
-          <div class="tag" data-value="土" data-group="element">土</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 头数筛选模块 -->
-    <div class="card" id="mod-head">
-      <div class="card-header">
-        <h2>头数</h2>
-        <div class="btn-group" role="group" aria-label="头数操作">
-          <button class="btn-mini" data-action="resetGroup" data-group="head">重置</button>
-          <button class="btn-mini" data-action="selectGroup" data-group="head">全选</button>
-          <button class="btn-mini" data-action="invertGroup" data-group="head">反选</button>
-          <button class="btn-mini red" data-action="clearGroup" data-group="head">清除</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tags" data-group="head" role="group" aria-label="头数选项">
-          <div class="tag" data-value="0" data-group="head">0头</div>
-          <div class="tag" data-value="1" data-group="head">1头</div>
-          <div class="tag" data-value="2" data-group="head">2头</div>
-          <div class="tag" data-value="3" data-group="head">3头</div>
-          <div class="tag" data-value="4" data-group="head">4头</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 尾数筛选模块 -->
-    <div class="card" id="mod-tail">
-      <div class="card-header">
-        <h2>尾数</h2>
-        <div class="btn-group" role="group" aria-label="尾数操作">
-          <button class="btn-mini" data-action="resetGroup" data-group="tail">重置</button>
-          <button class="btn-mini" data-action="selectGroup" data-group="tail">全选</button>
-          <button class="btn-mini" data-action="invertGroup" data-group="tail">反选</button>
-          <button class="btn-mini red" data-action="clearGroup" data-group="tail">清除</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tags" data-group="tail" role="group" aria-label="尾数选项">
-          <div class="tag" data-value="0" data-group="tail">尾0</div>
-          <div class="tag" data-value="1" data-group="tail">尾1</div>
-          <div class="tag" data-value="2" data-group="tail">尾2</div>
-          <div class="tag" data-value="3" data-group="tail">尾3</div>
-          <div class="tag" data-value="4" data-group="tail">尾4</div>
-          <div class="tag" data-value="5" data-group="tail">尾5</div>
-          <div class="tag" data-value="6" data-group="tail">尾6</div>
-          <div class="tag" data-value="7" data-group="tail">尾7</div>
-          <div class="tag" data-value="8" data-group="tail">尾8</div>
-          <div class="tag" data-value="9" data-group="tail">尾9</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 尾合筛选模块 -->
-    <div class="card" id="mod-sum">
-      <div class="card-header">
-        <h2>尾合</h2>
-        <div class="btn-group" role="group" aria-label="尾合操作">
-          <button class="btn-mini" data-action="resetGroup" data-group="sum">重置</button>
-          <button class="btn-mini" data-action="selectGroup" data-group="sum">全选</button>
-          <button class="btn-mini" data-action="invertGroup" data-group="sum">反选</button>
-          <button class="btn-mini red" data-action="clearGroup" data-group="sum">清除</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tags" data-group="sum" role="group" aria-label="尾合选项">
-          <div class="tag" data-value="0" data-group="sum">合0</div>
-          <div class="tag" data-value="1" data-group="sum">合1</div>
-          <div class="tag" data-value="2" data-group="sum">合2</div>
-          <div class="tag" data-value="3" data-group="sum">合3</div>
-          <div class="tag" data-value="4" data-group="sum">合4</div>
-          <div class="tag" data-value="5" data-group="sum">合5</div>
-          <div class="tag" data-value="6" data-group="sum">合6</div>
-          <div class="tag" data-value="7" data-group="sum">合7</div>
-          <div class="tag" data-value="8" data-group="sum">合8</div>
-          <div class="tag" data-value="9" data-group="sum">合9</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 大小单双筛选模块 -->
-    <div class="card" id="mod-bs">
-      <div class="card-header">
-        <h2>大小单双</h2>
-        <div class="btn-group" role="group" aria-label="大小单双操作">
-          <button class="btn-mini" data-action="resetGroup" data-group="bs">重置</button>
-          <button class="btn-mini" data-action="selectGroup" data-group="bs">全选</button>
-          <button class="btn-mini" data-action="invertGroup" data-group="bs">反选</button>
-          <button class="btn-mini red" data-action="clearGroup" data-group="bs">清除</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tags" data-group="bs" role="group" aria-label="大小单双选项">
-          <div class="tag" data-value="大单" data-group="bs">大单</div>
-          <div class="tag" data-value="小单" data-group="bs">小单</div>
-          <div class="tag" data-value="大双" data-group="bs">大双</div>
-          <div class="tag" data-value="小双" data-group="bs">小双</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 冷热号筛选模块 -->
-    <div class="card" id="mod-hot">
-      <div class="card-header">
-        <h2>冷热号</h2>
-        <div class="btn-group" role="group" aria-label="冷热号操作">
-          <button class="btn-mini" data-action="resetGroup" data-group="hot">重置</button>
-          <button class="btn-mini" data-action="selectGroup" data-group="hot">全选</button>
-          <button class="btn-mini" data-action="invertGroup" data-group="hot">反选</button>
-          <button class="btn-mini red" data-action="clearGroup" data-group="hot">清除</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="tags" data-group="hot" role="group" aria-label="冷热号选项">
-          <div class="tag" data-value="热号" data-group="hot">热号</div>
-          <div class="tag" data-value="温号" data-group="hot">温号</div>
-          <div class="tag" data-value="冷号" data-group="hot">冷号</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 号码排除模块 -->
-    <div class="card" id="mod-exclude">
-      <div class="card-header">
-        <h2>号码排除</h2>
-        <div class="btn-group" role="group" aria-label="号码排除操作">
-          <button class="btn-mini" data-action="invertExclude">反选</button>
-          <button class="btn-mini" data-action="undoExclude">撤销</button>
-          <button class="btn-mini" data-action="batchExcludePrompt">批量排除</button>
-          <button class="btn-mini red" data-action="clearExclude">清空</button>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="exclude-header">
-          <div>已排除：<b id="excludeCount" aria-live="polite">0</b> 个</div>
-          <label><input type="checkbox" id="lockExclude" onchange="Business.toggleExcludeLock()"> 锁定排除</label>
-        </div>
-        <div id="excludeGrid" class="exclude-grid" role="group" aria-label="号码排除选项"></div>
-      </div>
-    </div>
-
-    <div class="disclaimer">仅供娱乐，非投注建议</div>
-  </div>
-
-  <!-- 分析页面 -->
-  <div class="page" id="analysisPage" style="display:none">
-    <!-- 最新开奖 + 倒计时模块 -->
-    <div class="analysis-card">
-      <div style="text-align:center; margin-bottom:12px;">
-        <div style="font-size:15px; color:var(--sub-text);">第 <span id="curExpect">--</span> 期开奖结果</div>
-        <div class="countdown-small">
-          距离下期开奖还有 <span class="num" id="countdown">00:00:00</span>
-        </div>
-      </div>
-      <div class="ball-group" id="latestBalls"></div>
-    </div>
-
-    <!-- 标签栏 -->
-    <div class="analysis-tab-bar">
-      <button class="analysis-tab-btn active" id="tabHistory" data-analysis-tab="history">历史记录</button>
-      <button class="analysis-tab-btn" id="tabAnalysis" data-analysis-tab="analysis">全维度分析</button>
-      <button class="analysis-tab-btn" id="tabZodiac" data-analysis-tab="zodiac">特码生肖关联</button>
-    </div>
-
-    <!-- 1. 历史记录模块 -->
-    <div class="analysis-tab-panel active" id="historyPanel">
-      <div class="analysis-card">
-        <div class="analysis-card-title-row">
-          <div class="analysis-card-title">历史记录</div>
-          <button class="analysis-refresh-btn" data-action="refreshHistory">刷新历史</button>
-        </div>
-        <div id="historyList">加载中...</div>
-        <div id="loadMore" class="load-more" style="display:none;">点击加载更多</div>
-      </div>
-    </div>
-
-    <!-- 2. 全维度分析模块 -->
-    <div class="analysis-tab-panel" id="analysisPanelContent">
-      <div class="analysis-card">
-        <div class="analysis-card-title">特码全维度统计</div>
-        <div class="analysis-filter-bar">
-          <select id="analyzeSelect" class="analysis-filter-select">
-            <option value="10">最近10期</option>
-            <option value="20">最近20期</option>
-            <option value="30" selected>最近30期</option>
-            <option value="all">全年数据</option>
-          </select>
-          <input type="number" id="customNum" class="analysis-filter-input" placeholder="自定义期数">
-          <button class="analysis-filter-btn" data-action="syncAnalyze">确认</button>
-        </div>
-
-        <div class="empty-tip" id="emptyTip">暂无数据可分析</div>
-        <div id="hotWrap" style="display:none;">
-          <div class="hot-wrap-title">热门结论</div>
-          <div class="hot-grid">
-            <div class="hot-card"><div class="label">核心形态</div><div class="value" id="hotShape">--</div></div>
-            <div class="hot-card"><div class="label">热门生肖</div><div class="value" id="hotZodiac">--</div></div>
-            <div class="hot-card"><div class="label">最热头/尾数</div><div class="value" id="hotHeadTail">--</div></div>
-            <div class="hot-card"><div class="label">波色/五行</div><div class="value" id="hotColorWx">--</div></div>
-            <div class="hot-card full"><div class="label">遗漏总结</div><div class="value" id="hotMiss">--</div></div>
-          </div>
-        </div>
-
-        <div class="analysis-sub-title">
-          <span>生肖统计 <span class="hot-tag">热门TOP</span></span>
-          <button class="toggle-btn" data-action="toggleDetail" data-target="zodiacDetail">展开详情</button>
-        </div>
-        <div class="analysis-item-full" style="text-align:left;line-height:1.6;display:block;">
-          热门生肖 → <span id="hotZodiac2" style="color:var(--danger);font-weight:700;">--</span>
-        </div>
-        <div class="detail-box" id="zodiacDetail">
-          <div id="zodiacRank" class="rank-box"></div>
-        </div>
-
-        <div class="analysis-sub-title">
-          <span>单双 & 大小 <span class="hot-tag">热门</span></span>
-          <button class="toggle-btn" data-action="toggleDetail" data-target="detail1">展开详情</button>
-        </div>
-        <div class="analysis-item-full">热门 → <span id="hotShape2">--</span></div>
-        <div class="detail-box" id="detail1">
-          <div class="analysis-grid">
-            <div class="analysis-item"><div class="label">单数</div><div class="value" id="odd">--</div></div>
-            <div class="analysis-item"><div class="label">双数</div><div class="value" id="even">--</div></div>
-            <div class="analysis-item"><div class="label">大(≥25)</div><div class="value" id="big">--</div></div>
-            <div class="analysis-item"><div class="label">小(&lt;25)</div><div class="value" id="small">--</div></div>
-          </div>
-          <div id="singleDoubleRank" class="rank-box"></div>
-          <div id="bigSmallRank" class="rank-box"></div>
-        </div>
-
-        <div class="analysis-sub-title">
-          <span>区间统计 <span class="hot-tag">热门</span></span>
-          <button class="toggle-btn" data-action="toggleDetail" data-target="detail2">展开详情</button>
-        </div>
-        <div class="analysis-item-full">热门区间 → <span id="hotRange2">--</span></div>
-        <div class="detail-box" id="detail2">
-          <div class="analysis-row">
-            <div class="analysis-item"><div class="label">1-9</div><div class="value" id="r1">--</div></div>
-            <div class="analysis-item"><div class="label">10-19</div><div class="value" id="r2">--</div></div>
-            <div class="analysis-item"><div class="label">20-29</div><div class="value" id="r3">--</div></div>
-            <div class="analysis-item"><div class="label">30-39</div><div class="value" id="r4">--</div></div>
-            <div class="analysis-item"><div class="label">40-49</div><div class="value" id="r5">--</div></div>
-          </div>
-          <div id="rangeRank" class="rank-box"></div>
-        </div>
-
-        <div class="analysis-sub-title">
-          <span>头数统计 <span class="hot-tag">热门</span></span>
-          <button class="toggle-btn" data-action="toggleDetail" data-target="detail3">展开详情</button>
-        </div>
-        <div class="analysis-item-full">热门头数 → <span id="hotHead2">--</span></div>
-        <div class="detail-box" id="detail3">
-          <div class="analysis-row">
-            <div class="analysis-item"><div class="label">头0</div><div class="value" id="h0">--</div></div>
-            <div class="analysis-item"><div class="label">头1</div><div class="value" id="h1">--</div></div>
-            <div class="analysis-item"><div class="label">头2</div><div class="value" id="h2">--</div></div>
-            <div class="analysis-item"><div class="label">头3</div><div class="value" id="h3">--</div></div>
-            <div class="analysis-item"><div class="label">头4</div><div class="value" id="h4">--</div></div>
-          </div>
-          <div id="headRank" class="rank-box"></div>
-        </div>
-
-        <div class="analysis-sub-title">
-          <span>尾数统计 <span class="hot-tag">热门</span></span>
-          <button class="toggle-btn" data-action="toggleDetail" data-target="detail4">展开详情</button>
-        </div>
-        <div class="analysis-item-full">热门尾数 → <span id="hotTail2">--</span></div>
-        <div class="detail-box" id="detail4">
-          <div class="analysis-row" id="tailRow"></div>
-          <div id="tailRank" class="rank-box"></div>
-        </div>
-
-        <div class="analysis-sub-title">
-          <span>波色统计 <span class="hot-tag">热门</span></span>
-          <button class="toggle-btn" data-action="toggleDetail" data-target="detail5">展开详情</button>
-        </div>
-        <div class="analysis-item-full">热门波色 → <span id="hotColor2">--</span></div>
-        <div class="detail-box" id="detail5">
-          <div class="analysis-row">
-            <div class="analysis-item"><div class="label">红波</div><div class="value" id="cRed">--</div></div>
-            <div class="analysis-item"><div class="label">蓝波</div><div class="value" id="cBlue">--</div></div>
-            <div class="analysis-item"><div class="label">绿波</div><div class="value" id="cGreen">--</div></div>
-          </div>
-          <div id="colorRank" class="rank-box"></div>
-        </div>
-
-        <div class="analysis-sub-title">
-          <span>五行统计 <span class="hot-tag">热门</span></span>
-          <button class="toggle-btn" data-action="toggleDetail" data-target="detail6">展开详情</button>
-        </div>
-        <div class="analysis-item-full">热门五行 → <span id="hotWuxing2">--</span></div>
-        <div class="detail-box" id="detail6">
-          <div class="analysis-row">
-            <div class="analysis-item"><div class="label">金</div><div class="value" id="wJin">--</div></div>
-            <div class="analysis-item"><div class="label">木</div><div class="value" id="wMu">--</div></div>
-            <div class="analysis-item"><div class="label">水</div><div class="value" id="wShui">--</div></div>
-            <div class="analysis-item"><div class="label">火</div><div class="value" id="wHuo">--</div></div>
-            <div class="analysis-item"><div class="label">土</div><div class="value" id="wTu">--</div></div>
-          </div>
-          <div id="wuxingRank" class="rank-box"></div>
-        </div>
-
-        <div class="analysis-sub-title">
-          <span>家禽/野兽 <span class="hot-tag">热门</span></span>
-          <button class="toggle-btn" data-action="toggleDetail" data-target="detail7">展开详情</button>
-        </div>
-        <div class="analysis-item-full">热门 → <span id="hotAnimal">--</span></div>
-        <div class="detail-box" id="detail7">
-          <div class="analysis-grid">
-            <div class="analysis-item"><div class="label">家禽</div><div class="value" id="aniHome">--</div></div>
-            <div class="analysis-item"><div class="label">野兽</div><div class="value" id="aniWild">--</div></div>
-          </div>
-          <div id="animalRank" class="rank-box"></div>
-        </div>
-
-        <div class="analysis-sub-title">
-          <span>遗漏统计 <span class="hot-tag">公式版</span></span>
-          <button class="toggle-btn" data-action="toggleDetail" data-target="detail8">展开详情</button>
-        </div>
-        <div class="analysis-item-full">热号/温号/冷号 → <span id="hotColdTip">--</span></div>
-        <div class="detail-box" id="detail8">
-          <div class="analysis-grid">
-            <div class="analysis-item"><div class="label">当前最大遗漏</div><div class="value" id="missCur">--</div></div>
-            <div class="analysis-item"><div class="label">平均遗漏</div><div class="value" id="missAvg">--</div></div>
-            <div class="analysis-item"><div class="label">历史最大遗漏</div><div class="value" id="missMax">--</div></div>
-            <div class="analysis-item"><div class="label">热号数量</div><div class="value" id="missHot">--</div></div>
-            <div class="analysis-item"><div class="label">温号数量</div><div class="value" id="missWarm">--</div></div>
-            <div class="analysis-item"><div class="label">冷号数量</div><div class="value" id="missCold">--</div></div>
-          </div>
-        </div>
-
-        <div class="analysis-sub-title">
-          <span>连出统计 <span class="hot-tag">公式版</span></span>
-          <button class="toggle-btn" data-action="toggleDetail" data-target="detail9">展开详情</button>
-        </div>
-        <div class="analysis-item-full">当前/最长连出 → <span id="streakTip">--</span></div>
-        <div class="detail-box" id="detail9">
-          <div class="analysis-grid">
-            <div class="analysis-item"><div class="label">当前连出</div><div class="value" id="streakCur">--</div></div>
-            <div class="analysis-item"><div class="label">最长连出</div><div class="value" id="streakMax">--</div></div>
-          </div>
-        </div>
-
-        <div class="analysis-sub-title" style="color:var(--danger)">综合热门特码</div>
-        <div class="analysis-item-full">特码热门TOP5 → <span id="hotNumber" style="color:var(--danger);font-weight:700;">--</span></div>
-      </div>
-    </div>
-
-    <!-- 3. 特码生肖关联模块 -->
-    <div class="analysis-tab-panel" id="zodiacAnalysisPanel">
-      <div class="analysis-card">
-        <div class="analysis-card-title-row">
-          <div class="analysis-card-title" style="color:#13a662;">特码生肖·尾数关联</div>
-        </div>
-        <!-- 期数+号码数量双筛选栏 -->
-        <div class="analysis-filter-bar">
-          <select id="zodiacAnalyzeSelect" class="analysis-filter-select">
-            <option value="10">最近10期</option>
-            <option value="20">最近20期</option>
-            <option value="30" selected>最近30期</option>
-            <option value="all">全年数据</option>
-          </select>
-          <input type="number" id="zodiacCustomNum" class="analysis-filter-input" placeholder="自定义期数">
-          <!-- 号码数量选择器 -->
-          <select id="numCountSelect" class="analysis-filter-select">
-            <option value="5" selected>5个号</option>
-            <option value="10">10个号</option>
-            <option value="15">15个号</option>
-            <option value="20">20个号</option>
-            <option value="custom">自定义</option>
-          </select>
-          <input type="number" id="customNumCount" class="analysis-filter-input" placeholder="自定义数量" style="display:none;">
-          <button class="analysis-filter-btn" data-action="syncZodiacAnalyze">确认</button>
-        </div>
-
-        <div class="empty-tip" id="zodiacEmptyTip">暂无开奖历史数据</div>
-        <div id="zodiacContent" style="display:none;">
-          <div class="core-conclusion">
-            <div class="conclusion-title">🔥 特码真实共振组合</div>
-            <div class="conclusion-item" id="combo1">1. 首选：--</div>
-            <div class="conclusion-item" id="combo2">2. 次选：--</div>
-            <div class="conclusion-item" id="combo3">3. 备选：--</div>
-          </div>
-
-          <div class="analysis-sub-title" style="color:#13a662;">① 特码尾数 → 特码生肖真实关联</div>
-          <div class="data-grid-z" id="tailZodiacGrid"></div>
-
-          <div class="analysis-sub-title" style="color:#13a662;">② 上期特码生肖 → 本期特码生肖跟随</div>
-          <table class="follow-table-z" id="zodiacFollowTable">...</table>
-
-          <div class="analysis-sub-title" style="color:#13a662;">③ 12生肖特码冷热统计</div>
-          <div class="data-grid-z data-grid-4" id="zodiacTotalGrid"></div>
-
-          <div class="analysis-sub-title" style="color:#13a662;">④ 高遗漏生肖（反弹关注）</div>
-          <div class="data-grid-z data-grid-3" id="zodiacMissGrid"></div>
-
-          <div class="final-recommend-z" id="zodiacFinalNum">✅ 精选特码：--</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 固定底部导航栏 -->
-<div class="bottom-nav" role="navigation" aria-label="底部主导航">
-  <div class="bottom-nav-item active" data-action="switchBottomNav" data-index="0">筛选</div>
-  <div class="bottom-nav-item" data-action="switchBottomNav" data-index="1">机选</div>
-  <div class="bottom-nav-item" data-action="switchBottomNav" data-index="2">分析</div>
-  <div class="bottom-nav-item" data-action="switchBottomNav" data-index="3">我的</div>
-</div>
-
-<!-- 轻提示 -->
-<div class="toast" id="toast" role="alert" aria-live="assertive"></div>
-
-<script src="script.js"></script>
-</body>
-</html>
-```
-
-```css
-/* 全局CSS变量（主题配置，一键修改样式） */
-:root{
-  /* 浅色主题 */
-  --bg:#F2F2F7;
-  --card:#FFFFFF;
-  --text:#000000;
-  --sub-text:#8E8E93;
-  --primary:#007AFF;
-  --danger:#FF3B30;
-  --blue:#007AFF;
-  --green:#34C759;
-  --border:rgba(0,0,0,0.08);
-  --overlay:rgba(0,0,0,0.75);
-  --bg-secondary:#F8F8F8;
-  /* 通用样式变量 */
-  --shadow-sm:0 2px 8px rgba(0,0,0,0.06);
-  --shadow:0 4px 12px rgba(0,0,0,0.08);
-  --radius-sm:10px;
-  --radius:16px;
-  --radius-lg:20px;
-  --ball-size:28px;
-  /* 安全区变量 */
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  /* 动画时长变量 */
-  --anim-fast:0.15s;
-  --anim-normal:0.3s;
-  --anim-slow:0.5s;
-  /* 布局常量 */
-  --top-card-height:210px;
-  --top-offset:240px;
-  --preview-max-count:8;
-}
-
-/* 深色模式自动适配 */
-@media (prefers-color-scheme: dark) {
-  :root{
-    --bg:#000000;
-    --card:#1C1C1E;
-    --text:#FFFFFF;
-    --sub-text:#98989F;
-    --primary:#0A84FF;
-    --danger:#FF453A;
-    --blue:#0A84FF;
-    --green:#30D158;
-    --border:rgba(255,255,255,0.1);
-    --overlay:rgba(0,0,0,0.85);
-    --bg-secondary:#2C2C2E;
-  }
-}
-
-/* 小屏全局优化 */
-@media (max-width: 375px) {
-  :root{
-    --top-card-height:190px;
-    --top-offset:220px;
-  }
-  
-  body{
-    padding-bottom: calc(70px + var(--safe-bottom));
-  }
-  
-  /* 分析项小屏优化 */
-  .analysis-item{
-    min-width: clamp(50px, 15vw, 60px);
-    padding: clamp(6px, 2vw, 10px) clamp(4px, 1.5vw, 8px);
-  }
-  
-  /* 按钮小屏优化 */
-  .btn-mini{
-    padding: 4px 8px;
-    font-size: 11px;
-  }
-  
-  /* 标签小屏优化 */
-  .tag{
-    padding: 6px 10px;
-    font-size: 13px;
-  }
-  
-  /* 卡片小屏优化 */
-  .card-body{
-    padding: 10px 16px 16px;
-  }
-  
-  /* 卡片标题小屏优化 */
-  .card-header{
-    padding: 14px 16px;
-  }
-  
-  /* 底部导航小屏优化 */
-  .bottom-nav{
-    padding: 10px 0 calc(10px + var(--safe-bottom));
-  }
-  
-  /* 底部导航项小屏优化 */
-  .bottom-nav-item{
-    font-size: 14px;
-    padding: 8px 0;
-  }
-}
-
-@media (max-width: 320px) {
-  :root{
-    --top-card-height:170px;
-    --top-offset:200px;
-  }
-  
-  /* 超小屏更紧凑 */
-  .analysis-item{
-    min-width: 46px;
-    padding: 5px 4px;
-  }
-  
-  .analysis-item .label{
-    font-size: 8px;
-  }
-  
-  .analysis-item .value{
-    font-size: 12px;
-  }
-}
-
-/* 顶部展示区小屏优化 */
-@media (max-width: 375px) {
-  .top-box{
-    padding: calc(8px + var(--safe-top)) 12px 8px;
-  }
-  
-  .top-card{
-    padding: 12px;
-  }
-  
-  .top-nums{
-    gap: 4px;
-    max-height: 140px;
-  }
-  
-  /* 号码球小屏优化 */
-  .num-ball{
-    width: calc(var(--ball-size) - 2px);
-    height: calc(var(--ball-size) - 2px);
-    font-size: 12px;
-  }
-  
-  .tag-zodiac{
-    font-size: 8px;
-  }
-}
-
-@media (max-width: 320px) {
-  .top-card{
-    padding: 10px;
-  }
-  
-  .top-nums{
-    gap: 3px;
-    max-height: 120px;
-  }
-}
-
-/* 防止页面意外放大 */
-html, body{
-  touch-action: manipulation;
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
-
-/* 全局重置与基础样式 */
-*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;-webkit-tap-highlight-color:transparent}
-html{scroll-behavior:smooth}
-body{
-  background:var(--bg);
-  color:var(--text);
-  padding-bottom: calc(80px + var(--safe-bottom));
-  -webkit-user-select:none;
-  user-select:none;
-  -webkit-touch-callout:none;
-  min-height:100vh;
-}
-
-/* 加载遮罩 */
-.loading-mask{
-  position:fixed;
-  top:0;left:0;right:0;bottom:0;
-  background:var(--bg);
-  z-index:1001;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-  transition:opacity var(--anim-normal);
-}
-.loading-mask.hide{opacity:0;pointer-events:none}
-.loading-spinner{
-  width:40px;height:40px;
-  border:3px solid var(--bg-secondary);
-  border-top-color:var(--primary);
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-}
-@keyframes spin{
-  from{transform:rotate(0deg)}
-  to{transform:rotate(360deg)}
-}
-.loading-text{font-size:14px;color:var(--sub-text)}
-
-/* 固定顶部展示区 */
-.top-box{
-  position:fixed;top:0;left:0;right:0;
-  background:var(--bg);z-index:99;
-  padding: calc(10px + var(--safe-top)) 16px 10px;
-  overflow:hidden;
-}
-.top-card{
-  background:var(--card);
-  border-radius:var(--radius-lg);
-  padding:16px;
-  box-shadow:var(--shadow);
-  height:var(--top-card-height);
-}
-.top-title{
-  font-size:13px;
-  color:var(--sub-text);
-  display:flex;
-  justify-content:space-between;
-  margin-bottom:8px;
-}
-.top-nums{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  justify-content:center;
-  max-height:160px;
-  overflow-y:auto;
-  overflow-x:hidden;
-  padding-right:4px;
-}
-.top-nums::-webkit-scrollbar{width:4px}
-.top-nums::-webkit-scrollbar-thumb{background:var(--sub-text);border-radius:2px;opacity:0.3}
-
-/* 主体内容区 */
-.body-box{
-  margin-top: calc(var(--top-offset) + var(--safe-top));
-  padding:0 16px;
-}
-.card{
-  background:var(--card);
-  border-radius:var(--radius);
-  margin-bottom:12px;
-  box-shadow:var(--shadow);
-  overflow:hidden;
-}
-.card-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:16px 20px;
-}
-.card-header h2{font-size:16px;font-weight:600}
-.card-body{padding:12px 20px 20px}
-
-/* 按钮组件 */
-.btn-group{display:flex;gap:6px;flex-wrap:wrap}
-.btn-mini{
-  padding:6px 10px;
-  font-size:12px;
-  border:none;
-  border-radius:var(--radius-sm);
-  background:var(--bg-secondary);
-  color:var(--primary);
-  cursor:pointer;
-  transition:opacity var(--anim-fast);
-  touch-action:manipulation;
-  -webkit-user-select:none;
-  user-select:none;
-}
-.btn-mini:active{opacity:0.6}
-.btn-mini.red{background:rgba(255,59,48,0.1);color:var(--danger)}
-.btn-bar{display:flex;gap:8px;margin-bottom:12px}
-.btn-line{
-  flex:1;
-  padding:10px 14px;
-  border:none;
-  border-radius:var(--radius);
-  background:var(--primary);
-  color:#FFFFFF;
-  cursor:pointer;
-  font-weight:500;
-  transition:opacity var(--anim-fast);
-  touch-action:manipulation;
-  -webkit-user-select:none;
-  user-select:none;
-}
-.btn-line:active{opacity:0.7}
-
-/* 标签组件 */
-.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.tag{
-  padding:8px 12px;
-  border-radius:20px;
-  background:var(--bg-secondary);
-  border:none;
-  font-size:14px;
-  cursor:pointer;
-  transition:all var(--anim-fast);
-  touch-action:manipulation;
-  -webkit-user-select:none;
-  user-select:none;
-  role:checkbox;
-  tabindex:0;
-}
-.tag.active{background:var(--primary);color:#FFFFFF}
-.tag:active{transform:scale(0.96)}
-
-/* 号码球组件 */
-.num-item{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:2px;
-  flex-shrink:0;
-  role:listitem;
-}
-.num-ball{
-  width:var(--ball-size);
-  height:var(--ball-size);
-  border-radius:50%;
-  color:#FFFFFF;
-  display:grid;
-  place-items:center;
-  font-size:13px;
-  font-weight:500;
-  -webkit-user-select:text;
-  user-select:text;
-}
-.红色{background:var(--danger)}
-.蓝色{background:var(--blue)}
-.绿色{background:var(--green)}
-.tag-zodiac{font-size:9px;color:var(--sub-text)}
-
-/* 排除号码网格 */
-.exclude-grid{
-  display:grid;
-  grid-template-columns:repeat(7,1fr);
-  gap:8px;
-  margin:10px 0;
-}
-.exclude-tag{
-  aspect-ratio:1/1;
-  display:grid;
-  place-items:center;
-  background:var(--bg-secondary);
-  border-radius:12px;
-  cursor:pointer;
-  transition:all var(--anim-fast);
-  touch-action:manipulation;
-  -webkit-user-select:none;
-  user-select:none;
-  role:checkbox;
-  tabindex:0;
-}
-.exclude-tag.excluded{background:var(--danger);color:#FFFFFF}
-.exclude-tag:active{transform:scale(0.95)}
-.exclude-header{
-  display:flex;
-  justify-content:space-between;
-  margin-bottom:8px;
-  font-size:14px;
-}
-
-/* 筛选方案列表 */
-.filter-save-list{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  margin-top:10px;
-}
-.filter-item{
-  background:var(--bg-secondary);
-  padding:10px 12px;
-  border-radius:12px;
-  role:listitem;
-}
-.filter-row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  overflow-x:auto;
-  padding-bottom:6px;
-  scrollbar-width:thin;
-}
-.filter-row::-webkit-scrollbar{height:4px}
-.filter-row::-webkit-scrollbar-thumb{background:var(--sub-text);border-radius:2px;opacity:0.3}
-.filter-item-name{font-weight:600;font-size:14px;white-space:nowrap}
-.filter-preview{display:flex;gap:5px}
-.filter-item-btns{display:flex;gap:6px;margin-top:8px}
-.filter-item-btns button{
-  flex:1;
-  padding:6px;
-  border-radius:8px;
-  border:none;
-  background:var(--bg);
-  color:var(--primary);
-  font-size:12px;
-  transition:opacity var(--anim-fast);
-  touch-action:manipulation;
-  -webkit-user-select:none;
-  user-select:none;
-}
-.filter-item-btns button:active{opacity:0.6}
-.filter-item-btns .del{background:rgba(255,59,48,0.1);color:var(--danger)}
-.filter-expand{
-  text-align:center;
-  padding:8px;
-  color:var(--primary);
-  cursor:pointer;
-  font-size:14px;
-  background:var(--bg-secondary);
-  border-radius:10px;
-  margin-top:4px;
-  touch-action:manipulation;
-  -webkit-user-select:none;
-  user-select:none;
-}
-.filter-expand:active{opacity:0.6}
-
-
-
-/* 固定底部导航栏 */
-.bottom-nav{
-  position:fixed;
-  left:0;right:0;bottom:0;
-  z-index:999;
-  background:rgba(255,255,255,0.9);
-  -webkit-backdrop-filter:blur(20px);
-  backdrop-filter:blur(20px);
-  display:flex;
-  justify-content:space-around;
-  align-items:center;
-  padding:12px 0 calc(12px + var(--safe-bottom));
-  border-top:0.5px solid var(--border);
-}
-
-/* 深色模式底部导航栏和快捷导航 */
-@media (prefers-color-scheme: dark) {
-  .bottom-nav{
-    background:rgba(28,28,30,0.9);
-  }
-  
-  .quick-nav{
-    background:rgba(28,28,30,0.8);
-  }
-}
-.bottom-nav-item{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-width:60px;
-  height:36px;
-  font-size:15px;
-  font-weight:500;
-  color:var(--sub-text);
-  border-radius:18px;
-  padding:0 12px;
-  transition:all var(--anim-fast);
-  cursor:pointer;
-  touch-action:manipulation;
-  -webkit-user-select:none;
-  user-select:none;
-  tabindex:0;
-}
-.bottom-nav-item.active{
-  color:var(--primary);
-  background:rgba(0,122,255,0.1);
-  transform:scale(1.03);
-}
-.bottom-nav-item:active{transform:scale(0.95)}
-
-/* 轻提示Toast组件 */
-.toast{
-  position:fixed;
-  left:50%;top:50%;
-  transform:translate(-50%,-50%);
-  z-index:9999;
-  padding:12px 24px;
-  background:var(--overlay);
-  -webkit-backdrop-filter:blur(10px);
-  backdrop-filter:blur(10px);
-  color:#FFFFFF;
-  border-radius:12px;
-  font-size:15px;
-  opacity:0;
-  visibility:hidden;
-  transition:all var(--anim-normal);
-  pointer-events:none;
-  max-width:80%;
-  text-align:center;
-}
-.toast.show{opacity:1;visibility:visible}
-
-/* 免责声明 */
-.disclaimer{
-  text-align:center;
-  font-size:12px;
-  color:var(--sub-text);
-  margin:20px 0;
-  padding-bottom:10px;
-}
-input[type="checkbox"]{
-  transform:scale(0.9);
-  margin-right:4px;
-  touch-action:manipulation;
-}
-
-/* 横屏竖屏自适应 - 确保在屏幕旋转时正确显示 */
-html, body {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow-x: hidden;
-}
-
-/* 横屏适配 */
-@media (orientation: landscape) {
-  .quick-nav{bottom: calc(80px + var(--safe-bottom))}
-  .back-top-btn{bottom: calc(80px + var(--safe-bottom))}
-  .bottom-nav{padding:12px 40px calc(12px + var(--safe-bottom))}
-  
-  /* 横屏时调整顶部展示区高度 */
-  :root{
-    --top-card-height: 180px;
-    --top-offset: 210px;
-  }
-}
-
-/* 竖屏适配 - 确保横屏后返回竖屏时恢复正常 */
-@media (orientation: portrait) {
-  /* 重置底部导航样式 */
-  .bottom-nav{padding:12px 0 calc(12px + var(--safe-bottom))}
-  
-  /* 重置一些组件的宽度，确保完全适应 */
-  .body-box, .card, .analysis-card {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-  
-  /* 确保内容不会溢出 */
-  * {
-    max-width: 100vw;
-    box-sizing: border-box;
-  }
-  
-  /* 重置顶部展示区高度到默认值 */
-  :root{
-    --top-card-height: 210px;
-    --top-offset: 240px;
-  }
-}
-
-/* 超小屏横屏竖屏特别优化 */
-@media (max-width: 375px) and (orientation: portrait) {
-  :root{
-    --top-card-height: 190px;
-    --top-offset: 220px;
-  }
-}
-
-@media (max-width: 320px) and (orientation: portrait) {
-  :root{
-    --top-card-height: 170px;
-    --top-offset: 200px;
-  }
-}
-
-/* 小屏适配 */
-@media (max-width: 375px) {
-  .btn-mini{padding:6px 8px;font-size:11px}
-  .tag{padding:7px 10px;font-size:13px}
-}
-
-/* ====================== 分析页面样式 ====================== */
-/* 分析卡片 */
-.analysis-card {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 12px;
-  box-shadow: var(--shadow);
-}
-
-.analysis-card-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.analysis-card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.analysis-card-title::before {
-  content: "";
-  width: 4px;
-  height: 18px;
-  background: var(--danger);
-  border-radius: 2px;
-}
-
-.analysis-refresh-btn {
-  padding: 6px 12px;
-  border-radius: 10px;
-  border: none;
-  background: var(--primary);
-  color: #fff;
-  font-size: 14px;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.analysis-refresh-btn:active {
-  opacity: 0.7;
-}
-
-/* 倒计时 */
-.countdown-small {
-  text-align: center;
-  font-size: 12px;
-  color: var(--danger);
-  margin-top: 6px;
-}
-
-.countdown-small .num {
-  font-family: monospace;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-/* 球组 */
-.ball-group {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: clamp(4px, 2vw, 12px);
-  margin: 16px 0;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  padding: 4px 2px;
-  -webkit-overflow-scrolling: touch;
-}
-
-.ball-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(2px, 1vw, 6px);
-  min-width: 0;
-  flex-shrink: 0;
-}
-
-.ball {
-  width: clamp(28px, 8vw, 44px);
-  height: clamp(28px, 8vw, 44px);
-  border-radius: 50%;
-  color: #fff;
-  font-weight: 700;
-  font-size: clamp(12px, 4vw, 19px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-}
-
-.ball.red { background: radial-gradient(circle at 30% 30%, #ff4d4f, #cf1322); }
-.ball.blue { background: radial-gradient(circle at 30% 30%, #40a9ff, #096dd9); }
-.ball.green { background: radial-gradient(circle at 30% 30%, #73d13d, #389e0d); }
-
-.ball-zodiac {
-  font-size: clamp(9px, 3vw, 13px);
-  color: var(--sub-text);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.ball-sep {
-  font-size: clamp(16px, 5vw, 24px);
-  color: var(--sub-text);
-  line-height: clamp(28px, 8vw, 44px);
-  padding: 0 clamp(2px, 1vw, 4px);
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-/* 分析标签栏 */
-.analysis-tab-bar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.analysis-tab-btn {
-  flex: 1;
-  padding: 10px 6px;
-  border-radius: 14px;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  background: var(--bg-secondary);
-  color: var(--sub-text);
-  cursor: pointer;
-  transition: all var(--anim-fast);
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.analysis-tab-btn.active {
-  background: var(--danger);
-  color: #fff;
-}
-
-.analysis-tab-btn[data-analysis-tab="analysis"].active {
-  background: var(--primary);
-  color: #fff;
-}
-
-.analysis-tab-btn[data-analysis-tab="zodiac"].active {
-  background: #13a662;
-  color: #fff;
-}
-
-/* 分析面板 */
-.analysis-tab-panel {
-  display: none;
-}
-
-.analysis-tab-panel.active {
-  display: block;
-}
-
-/* 筛选栏 */
-.analysis-filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 18px;
-  flex-wrap: wrap;
-}
-
-.analysis-filter-select, .analysis-filter-input, .analysis-filter-btn {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 8px;
-  font-size: 13px;
-  background: var(--card);
-  color: var(--text);
-  transition: border var(--anim-fast);
-}
-
-.analysis-filter-select:focus, .analysis-filter-input:focus {
-  border-color: var(--primary);
-  outline: none;
-}
-
-.analysis-filter-select {
-  flex: 1;
-  min-width: 70px;
-}
-
-.analysis-filter-input {
-  flex: 0.8;
-  min-width: 60px;
-}
-
-.analysis-filter-btn {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  flex-shrink: 0;
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.analysis-filter-btn:active {
-  opacity: 0.7;
-}
-
-/* 热门卡片 */
-.hot-wrap-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text);
-  margin: 16px 0 16px;
-  letter-spacing: -0.5px;
-}
-
-.hot-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.hot-card {
-  background: var(--card);
-  border-radius: 16px;
-  padding: 18px 16px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
-  border: 0.5px solid var(--border);
-  position: relative;
-  overflow: hidden;
-}
-
-.hot-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--danger);
-}
-
-.hot-card.full {
-  grid-column: span 2;
-  background: var(--card);
-}
-
-.hot-card.full::before {
-  background: var(--primary);
-}
-
-.hot-card .label {
-  font-size: 13px;
-  color: var(--sub-text);
-  font-weight: 500;
-  margin-bottom: 8px;
-  letter-spacing: -0.2px;
-}
-
-.hot-card .value {
-  font-weight: 700;
-  font-size: 18px;
-  color: var(--text);
-  line-height: 1.25;
-  letter-spacing: -0.3px;
-}
-
-.hot-card.full .value {
-  color: var(--primary);
-  font-size: 17px;
-}
-
-/* 排行表格 */
-.rank-box {
-  margin-top: 14px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: var(--shadow-sm);
-}
-
-.rank-header {
-  display: flex;
-  padding: 6px 0 8px;
-  font-size: 11px;
-  color: var(--sub-text);
-  border-bottom: 1px solid var(--border);
-}
-
-.rank-header .rank-no { width: 32px; text-align: center; }
-.rank-header .rank-name { flex: 1; padding: 0 6px; }
-.rank-header .rank-count { width: 42px; text-align: right; }
-.rank-header .rank-rate { width: 48px; text-align: right; }
-.rank-header .rank-miss { width: 48px; text-align: right; }
-
-.rank-row {
-  display: flex;
-  padding: 8px 0;
-  font-size: 12px;
-  border-bottom: 1px solid var(--border);
-  align-items: center;
-  color: var(--text);
-}
-
-.rank-row:last-child { border-bottom: none; }
-
-.rank-row .rank-no {
-  width: 32px;
-  text-align: center;
-  font-weight: 700;
-  color: var(--danger);
-}
-
-.rank-row .rank-name { flex: 1; padding: 0 6px; }
-.rank-row .rank-count {
-  width: 42px;
-  text-align: right;
-  font-weight: 600;
-}
-.rank-row .rank-rate {
-  width: 48px;
-  text-align: right;
-  color: var(--sub-text);
-}
-.rank-row .rank-miss {
-  width: 48px;
-  text-align: right;
-  color: var(--sub-text);
-}
-
-/* 子标题 */
-.analysis-sub-title {
-  font-size: 15px;
-  font-weight: 700;
-  margin: 20px 0 12px;
-  color: var(--text);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  padding: 8px 0;
-  transition: opacity var(--anim-fast);
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.analysis-sub-title:hover {
-  opacity: 0.8;
-}
-
-.analysis-sub-title:active {
-  opacity: 0.6;
-}
-
-.hot-tag {
-  display: inline-block;
-  background: rgba(255, 59, 48, 0.1);
-  color: var(--danger);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 6px;
-  margin-left: 6px;
-}
-
-.toggle-btn {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--primary);
-  background: rgba(0, 122, 255, 0.1);
-  padding: 4px 10px;
-  border-radius: 10px;
-  cursor: pointer;
-  border: none;
-  transition: background var(--anim-fast);
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.toggle-btn:hover {
-  background: rgba(0, 122, 255, 0.2);
-}
-
-.toggle-btn:active {
-  opacity: 0.7;
-}
-
-/* 分析项 */
-.analysis-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(6px, 2vw, 10px);
-  margin-bottom: 12px;
-}
-
-.analysis-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(6px, 2vw, 10px);
-  margin: 10px 0;
-}
-
-.analysis-item {
-  flex: 1;
-  min-width: clamp(56px, 18vw, 72px);
-  background: var(--bg-secondary);
-  padding: clamp(8px, 3vw, 12px) clamp(6px, 2vw, 10px);
-  border-radius: 12px;
-  text-align: center;
-  font-size: clamp(10px, 3vw, 12px);
-}
-
-.analysis-item .label {
-  color: var(--sub-text);
-  font-size: clamp(9px, 2.5vw, 11px);
-  margin-bottom: 4px;
-  white-space: nowrap;
-}
-
-.analysis-item .value {
-  font-weight: 700;
-  font-size: clamp(13px, 4vw, 15px);
-  color: var(--primary);
-}
-
-.analysis-item-full {
-  background: var(--bg-secondary);
-  padding: 12px 14px;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  font-size: 13px;
-  color: var(--text);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* 详情盒子 */
-.detail-box {
-  display: none;
-  margin-top: 10px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  padding: 14px;
-}
-
-.empty-tip {
-  text-align: center;
-  padding: 24px 0;
-  color: var(--sub-text);
-  font-size: 14px;
-}
-
-/* 加载更多 */
-.load-more {
-  text-align: center;
-  padding: 12px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  color: var(--primary);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  margin-top: 10px;
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.load-more:active {
-  opacity: 0.7;
-}
-
-/* 历史记录项 */
-.history-item {
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.history-item:last-child {
-  border-bottom: none;
-}
-
-.history-expect {
-  font-size: 14px;
-  color: var(--sub-text);
-  margin-bottom: 8px;
-  text-align: left;
-}
-
-.history-item .ball-group {
-  justify-content: flex-start;
-  gap: 8px;
-}
-
-/* 生肖关联专用样式 */
-.core-conclusion {
-  background: rgba(255, 59, 48, 0.05);
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 16px;
-}
-
-.conclusion-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #13a662;
-  margin-bottom: 8px;
-}
-
-.conclusion-item {
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text);
-}
-
-.data-grid-z {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.data-grid-4 {
-  grid-template-columns: repeat(4, 1fr) !important;
-}
-
-.data-grid-3 {
-  grid-template-columns: repeat(3, 1fr) !important;
-}
-
-.data-item-z {
-  background: var(--bg-secondary);
-  border-radius: 8px;
-  padding: 10px 6px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--text);
-}
-
-.data-item-z.hot {
-  background: rgba(19, 166, 98, 0.1);
-  color: #13a662;
-  font-weight: 700;
-}
-
-.data-item-z.cold {
-  background: rgba(255, 59, 48, 0.1);
-  color: var(--danger);
-  font-weight: 700;
-}
-
-.data-item-z.warm {
-  background: rgba(250, 140, 22, 0.1);
-  color: #fa8c16;
-}
-
-.follow-table-z {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-  margin-top: 8px;
-  color: var(--text);
-}
-
-.follow-table-z th, .follow-table-z td {
-  border: 1px solid var(--border);
-  padding: 6px 4px;
-  text-align: center;
-}
-
-.follow-table-z th {
-  background: var(--bg-secondary);
-  font-weight: 700;
-}
-
-.final-recommend-z {
-  background: rgba(19, 166, 98, 0.1);
-  border-radius: 12px;
-  padding: 14px;
-  text-align: center;
-  font-size: 15px;
-  font-weight: 700;
-  color: #13a662;
-  margin-top: 10px;
-  word-break: break-all;
-  line-height: 1.6;
-}
-```
-
-```javascript
 // ====================== 1. 常量枚举配置（所有可配置项集中管理，冻结不可修改）======================
 /**
  * 全局配置常量
@@ -2407,45 +656,29 @@ const Toast = {
 
 // ====================== 6. DOM缓存模块（所有常用DOM提前缓存，避免重复查询）======================
 /**
- * DOM元素缓存（懒加载）
+ * DOM元素缓存
  * @namespace DOM
  */
 const DOM = {
-  // 懒加载缓存对象
-  _cache: {},
-  
   // 加载遮罩
-  get loadingMask() { return this._get('loadingMask'); },
+  loadingMask: document.getElementById('loadingMask'),
   // 结果展示
-  get resultCount() { return this._get('resultCount'); },
-  get resultNums() { return this._get('resultNums'); },
+  resultCount: document.getElementById('resultCount'),
+  resultNums: document.getElementById('resultNums'),
   // 排除号码
-  get excludeCount() { return this._get('excludeCount'); },
-  get excludeGrid() { return this._get('excludeGrid'); },
-  get lockExclude() { return this._get('lockExclude'); },
+  excludeCount: document.getElementById('excludeCount'),
+  excludeGrid: document.getElementById('excludeGrid'),
+  lockExclude: document.getElementById('lockExclude'),
   // 方案列表
-  get filterList() { return this._get('filterList'); },
+  filterList: document.getElementById('filterList'),
   // 生肖标签
-  get zodiacTags() { return this._get('zodiacTags'); },
-
-  
-  // 内部懒加载方法
-  _get: function(id) {
-    if (!this._cache[id]) {
-      this._cache[id] = document.getElementById(id);
-    }
-    return this._cache[id];
-  },
-  
-  // 初始化所有缓存（在DOM加载完成后调用）
-  init: function() {
-    const ids = [
-      'loadingMask', 'resultCount', 'resultNums',
-      'excludeCount', 'excludeGrid', 'lockExclude',
-      'filterList', 'zodiacTags'
-    ];
-    ids.forEach(id => this._get(id));
-  }
+  zodiacTags: document.getElementById('zodiacTags'),
+  // 快捷导航
+  quickNav: document.getElementById('quickNav'),
+  navToggle: document.getElementById('navToggle'),
+  navTabs: document.getElementById('navTabs'),
+  // 返回顶部
+  backTopBtn: document.getElementById('backTopBtn')
 };
 
 // ====================== 7. 渲染模块（所有视图渲染逻辑，增量更新优化）======================
@@ -3095,7 +1328,11 @@ const Business = {
       }
     }
     
-
+    // 控制快捷导航的显示/隐藏：仅在筛选页面(index=0)显示
+    const quickNav = document.getElementById('quickNav');
+    if(quickNav) {
+      quickNav.style.display = index === 0 ? 'block' : 'none';
+    }
     
     // 页面特定处理
     if(index === 2) {
@@ -3112,57 +1349,11 @@ const Business = {
     const state = StateManager._state;
     if(state.analysis.historyData.length === 0) {
       Business.refreshHistory();
-    } else {
-      const sortedData = state.analysis.historyData;
-      if (sortedData.length > 0) {
-        Business.renderLatest(sortedData[0]);
-        Business.renderHistory();
-        Business.renderFullAnalysis();
-        Business.renderZodiacAnalysis();
-      }
     }
     Business.startCountdown();
     Business.startAutoRefresh();
   },
 
-  /**
-   * 获取备用模拟数据
-   */
-  getMockHistoryData: () => {
-    const mockData = [];
-    const colors = ['红', '蓝', '绿'];
-    const zodiacs = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
-    
-    for (let i = 0; i < 50; i++) {
-      const expect = 2026001 + i;
-      const nums = [];
-      for (let j = 0; j < 6; j++) {
-        nums.push(Math.floor(Math.random() * 49) + 1);
-      }
-      const special = Math.floor(Math.random() * 49) + 1;
-      nums.push(special);
-      
-      const wave = [];
-      for (let j = 0; j < 7; j++) {
-        wave.push(colors[Math.floor(Math.random() * 3)]);
-      }
-      
-      const zod = [];
-      for (let j = 0; j < 7; j++) {
-        zod.push(zodiacs[Math.floor(Math.random() * 12)]);
-      }
-      
-      mockData.push({
-        expect: expect.toString(),
-        openCode: nums.join(','),
-        wave: wave.join(','),
-        zodiac: zod.join(',')
-      });
-    }
-    
-    return mockData.reverse();
-  },
-  
   /**
    * 刷新历史数据
    */
@@ -3170,69 +1361,49 @@ const Business = {
     const historyList = document.getElementById('historyList');
     if(historyList) historyList.innerHTML = '<div style="padding:20px;text-align:center;">加载中...</div>';
     
-    let sortedData = [];
-    
     try {
       const year = new Date().getFullYear();
-      const res = await fetch(CONFIG.API.HISTORY + year, { 
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
+      const res = await fetch(CONFIG.API.HISTORY + year);
+      const data = await res.json();
+      let rawData = data.data || [];
+
+      // 过滤无效数据
+      rawData = rawData.filter(item => {
+        const expect = item.expect || '';
+        const openCode = item.openCode || '';
+        return expect && openCode && openCode.split(',').length === 7;
+      });
+
+      // 去重并排序
+      const uniqueMap = new Map();
+      rawData.forEach(item => {
+        const expectNum = Number(item.expect || 0);
+        if(expectNum && !isNaN(expectNum)) {
+          uniqueMap.set(expectNum, item);
         }
       });
-      
-      if (res.ok) {
-        const data = await res.json();
-        let rawData = data.data || [];
 
-        // 过滤无效数据
-        rawData = rawData.filter(item => {
-          const expect = item.expect || '';
-          const openCode = item.openCode || '';
-          return expect && openCode && openCode.split(',').length === 7;
-        });
+      const sortedData = Array.from(uniqueMap.values()).sort((a, b) => {
+        return Number(b.expect || 0) - Number(a.expect || 0);
+      });
 
-        // 去重并排序
-        const uniqueMap = new Map();
-        rawData.forEach(item => {
-          const expectNum = Number(item.expect || 0);
-          if(expectNum && !isNaN(expectNum)) {
-            uniqueMap.set(expectNum, item);
-          }
-        });
-
-        sortedData = Array.from(uniqueMap.values()).sort((a, b) => {
-          return Number(b.expect || 0) - Number(a.expect || 0);
-        });
-      }
-      
-      // 如果API没有返回数据，使用备用数据
-      if (sortedData.length === 0) {
-        sortedData = Business.getMockHistoryData();
-      }
-    } catch(e) {
-      sortedData = Business.getMockHistoryData();
-    }
-    
-    try {
       // 更新状态
       const newAnalysis = { ...StateManager._state.analysis, historyData: sortedData };
       StateManager.setState({ analysis: newAnalysis }, false);
 
-      // 只在元素存在时才渲染
-      if (document.getElementById('analysisPage') && 
-          document.getElementById('analysisPage').style.display !== 'none') {
-        Business.renderLatest(sortedData[0]);
-        Business.renderHistory();
-        Business.renderFullAnalysis();
-        Business.renderZodiacAnalysis();
-      }
+      // 渲染
+      Business.renderLatest(sortedData[0]);
+      Business.renderHistory();
+      Business.renderFullAnalysis();
+      Business.renderZodiacAnalysis();
       
-      if (historyList) {
-        Toast.show('数据加载成功');
+      Toast.show('数据加载成功');
+    } catch(e) {
+      console.error('加载历史数据失败', e);
+      if(historyList) {
+        historyList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">数据加载失败，请刷新重试</div>';
       }
-    } catch (renderErr) {
-      console.error('渲染失败', renderErr);
+      Toast.show('数据加载失败');
     }
     
     const loadMore = document.getElementById('loadMore');
@@ -3458,24 +1629,6 @@ const Business = {
     const hotZod = Object.entries(zodiac).sort((a, b) => b[1] - a[1]).slice(0, 3).map(i => i[0]).join('、');
     const hotAni = Object.entries(animal).sort((a, b) => b[1] - a[1])[0];
     const hotNum = Object.entries(numCount).sort((a, b) => b[1] - a[1]).slice(0, 5).map(i => i[0]).join(' ');
-
-    // 安全同步冷热号数据到号码列表
-    try {
-      const state = StateManager._state;
-      if(state.numList && state.numList.length === 49) {
-        const newNumList = state.numList.map(item => {
-          const p = lastAppear[item.num];
-          const currentMiss = p === -1 ? total : p;
-          let hotType = '温号';
-          if(currentMiss <= 3) hotType = '热号';
-          else if(currentMiss > 9) hotType = '冷号';
-          return { ...item, hot: hotType };
-        });
-        StateManager.setState({ numList: newNumList }, false);
-      }
-    } catch(e) {
-      console.error('同步冷热号数据失败', e);
-    }
 
     return {
       total, singleDouble, bigSmall, range, head, tail, color, wuxing, animal, zodiac, numCount,
@@ -4061,10 +2214,72 @@ const Business = {
   },
 
   /**
+   * 滚动到指定模块
+   * @param {string} targetId - 模块ID
+   */
+  scrollToModule: (targetId) => {
+    const targetEl = document.getElementById(targetId);
+    if(targetEl){
+      const offset = CONFIG.TOP_OFFSET + Utils.getSafeTop();
+      window.scrollTo({top: targetEl.offsetTop - offset, behavior: 'smooth'});
+    }
+    Business.toggleQuickNav(false);
+  },
+
+  /**
+   * 切换快捷导航展开/收起
+   * @param {boolean|null} isOpen - 强制指定展开/收起
+   */
+  toggleQuickNav: (isOpen = null) => {
+    const isCollapsed = DOM.quickNav.classList.contains('collapsed');
+    const shouldOpen = isOpen === null ? isCollapsed : isOpen;
+
+    if(shouldOpen){
+      DOM.quickNav.classList.remove('collapsed');
+      DOM.quickNav.classList.add('expanded');
+      DOM.navToggle.style.display = 'none';
+      DOM.navTabs.style.display = 'flex';
+    } else {
+      DOM.quickNav.classList.remove('expanded');
+      DOM.quickNav.classList.add('collapsed');
+      DOM.navTabs.style.display = 'none';
+      DOM.navToggle.style.display = 'grid';
+    }
+  },
+
+  /**
+   * 返回顶部
+   */
+  backToTop: () => {
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  },
+
+  /**
+   * 滚动事件处理（已节流优化）
+   */
+  handleScroll: Utils.throttle(() => {
+    const state = StateManager._state;
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+    clearTimeout(state.scrollTimer);
+
+    // 显示/隐藏返回顶部按钮
+    if(scrollTop > CONFIG.BACK_TOP_THRESHOLD){
+      DOM.backTopBtn.classList.add('show');
+      // 滚动停止后延迟隐藏
+      state.scrollTimer = setTimeout(() => {
+        DOM.backTopBtn.classList.remove('show');
+      }, CONFIG.SCROLL_HIDE_DELAY);
+    } else {
+      DOM.backTopBtn.classList.remove('show');
+    }
+  }, CONFIG.SCROLL_THROTTLE_DELAY),
+
+  /**
    * 页面卸载清理，避免内存泄漏
    */
   handlePageUnload: () => {
     StateManager.clearAllTimers();
+    window.removeEventListener('scroll', Business.handleScroll);
     window.removeEventListener('beforeunload', Business.handlePageUnload);
   }
 };
@@ -4083,55 +2298,14 @@ const EventBinder = {
     document.addEventListener('click', EventBinder.handleGlobalClick);
     // 键盘回车/空格事件（无障碍支持）
     document.addEventListener('keydown', EventBinder.handleKeyDown);
+    // 滚动事件（已节流）
+    window.addEventListener('scroll', Business.handleScroll);
+    // 点击空白关闭快捷导航
+    document.addEventListener('click', EventBinder.handleClickOutside);
     // 页面卸载清理
     window.addEventListener('beforeunload', Business.handlePageUnload);
     // 全局错误捕获
     window.addEventListener('error', EventBinder.handleGlobalError);
-    // 屏幕旋转/窗口大小变化事件（修复横屏后竖屏自适应）
-    window.addEventListener('resize', Utils.throttle(() => {
-      document.body.scrollTop = 0;
-      document.documentElement.scrollTop = 0;
-    }, 200));
-    window.addEventListener('orientationchange', () => {
-      setTimeout(() => {
-        document.body.scrollTop = 0;
-        document.documentElement.scrollTop = 0;
-      }, 100);
-    });
-    
-    // 分析页面：期数选择器change事件（自动刷新）
-    const analyzeSelect = document.getElementById('analyzeSelect');
-    const customNum = document.getElementById('customNum');
-    const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
-    const zodiacCustomNum = document.getElementById('zodiacCustomNum');
-    
-    if(analyzeSelect) {
-      analyzeSelect.addEventListener('change', function() {
-        Business.syncAnalyze();
-      });
-    }
-    
-    if(customNum) {
-      customNum.addEventListener('input', Utils.debounce(function() {
-        if(this.value.trim() && !isNaN(this.value.trim()) && Number(this.value.trim()) > 0) {
-          Business.syncAnalyze();
-        }
-      }, 500));
-    }
-    
-    if(zodiacAnalyzeSelect) {
-      zodiacAnalyzeSelect.addEventListener('change', function() {
-        Business.syncZodiacAnalyze();
-      });
-    }
-    
-    if(zodiacCustomNum) {
-      zodiacCustomNum.addEventListener('input', Utils.debounce(function() {
-        if(this.value.trim() && !isNaN(this.value.trim()) && Number(this.value.trim()) > 0) {
-          Business.syncZodiacAnalyze();
-        }
-      }, 500));
-    }
     
     // 分析页面：号码数量选择器change事件
     const numCountSelect = document.getElementById('numCountSelect');
@@ -4190,17 +2364,28 @@ const EventBinder = {
       return;
     }
 
-    // 6. 按钮动作处理（用枚举避免硬编码错误）
-    let actionBtn = target.closest('[data-action]');
-    
-    // 如果点击的是分析子标题，查找对应的展开/收起按钮
-    if(!actionBtn) {
-      const analysisTitle = target.closest('.analysis-sub-title');
-      if(analysisTitle) {
-        actionBtn = analysisTitle.querySelector('.toggle-btn');
-      }
+    // 3. 快捷导航跳转
+    const navTab = target.closest('.nav-tab[data-target]');
+    if(navTab){
+      const targetId = navTab.dataset.target;
+      Business.scrollToModule(targetId);
+      return;
     }
-    
+
+    // 4. 快捷导航开关
+    if(target === DOM.navToggle){
+      Business.toggleQuickNav();
+      return;
+    }
+
+    // 5. 返回顶部
+    if(target === DOM.backTopBtn){
+      Business.backToTop();
+      return;
+    }
+
+    // 6. 按钮动作处理（用枚举避免硬编码错误）
+    const actionBtn = target.closest('[data-action]');
     if(actionBtn){
       const action = actionBtn.dataset.action;
       const group = actionBtn.dataset.group;
@@ -4272,7 +2457,15 @@ const EventBinder = {
     }
   },
 
-
+  /**
+   * 点击空白关闭快捷导航
+   * @param {MouseEvent} e - 点击事件
+   */
+  handleClickOutside: (e) => {
+    if(!DOM.quickNav.contains(e.target) && DOM.quickNav.classList.contains('expanded')){
+      Business.toggleQuickNav(false);
+    }
+  },
 
   /**
    * 全局错误捕获
@@ -4309,9 +2502,7 @@ async function initApp() {
     // 9. 启动分析页面倒计时和自动刷新检查
     Business.startCountdown();
     Business.checkDrawTimeLoop();
-    // 11. 加载历史数据（分析页面需要）
-    await Business.refreshHistory();
-    // 12. 隐藏加载遮罩
+    // 10. 隐藏加载遮罩
     Render.hideLoading();
     
     console.log(`小摇筛选 v${CONFIG.VERSION} 初始化完成，当前农历生肖：${StateManager._state.currentZodiac}`);
@@ -4324,4 +2515,3 @@ async function initApp() {
 
 // 页面加载完成后启动应用
 window.addEventListener('DOMContentLoaded', initApp);
-```
