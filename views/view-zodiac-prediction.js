@@ -191,6 +191,13 @@ const ViewZodiacPrediction = {
         return;
       }
 
+      var storageKey = 'ZONE_PREV_ZONE_' + period.key;
+      var prevZoneMap = {};
+      var cached = Storage.get(storageKey);
+      if (cached) prevZoneMap = cached;
+
+      var newZoneMap = {};
+
       var grouped = {};
       zoneOrder.forEach(function(z) { grouped[z] = []; });
       data.forEach(function(item) {
@@ -211,11 +218,14 @@ const ViewZodiacPrediction = {
         html += '</div>';
         html += '<div class="zone-card-list">';
         items.forEach(function(item) {
-          var missClass = item.miss <= 3 ? 'miss-recent' : (item.miss >= 9 ? 'miss-far' : '');
+          var currentZone = item.zone;
+          var prevZone = prevZoneMap[item.zodiac] || currentZone;
+          var missClass = zoneColors[prevZone] || '';
+          newZoneMap[item.zodiac] = currentZone;
           html += '<div class="zone-zod-card">';
+          html += '<div class="zod-card-count-badge">' + item.count + '</div>';
           html += '<div class="zod-card-name">' + item.zodiac + '</div>';
           html += '<div class="zod-card-stats">';
-          html += '<span class="zod-card-count">' + item.count + '次</span>';
           html += '<span class="zod-card-miss ' + missClass + '">' + item.miss + '期</span>';
           html += '</div>';
           html += '</div>';
@@ -225,6 +235,17 @@ const ViewZodiacPrediction = {
       });
 
       html += '</div>';
+
+      var changed = false;
+      var oldKeys = Object.keys(prevZoneMap);
+      var newKeys = Object.keys(newZoneMap);
+      if (oldKeys.length !== newKeys.length) { changed = true; }
+      else {
+        for (var ki = 0; ki < newKeys.length; ki++) {
+          if (prevZoneMap[newKeys[ki]] !== newZoneMap[newKeys[ki]]) { changed = true; break; }
+        }
+      }
+      if (changed) Storage.set(storageKey, newZoneMap);
     });
 
     grid.innerHTML = html;

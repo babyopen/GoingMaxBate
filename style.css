@@ -1879,37 +1879,51 @@ input[type="checkbox"]{
 
 .zone-card-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(64px, 15vw, 78px), 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(46px, 10vw, 60px), 1fr));
+  gap: clamp(4px, 0.8vw, 6px);
 }
 
 .zone-zod-card {
   background: var(--bg-secondary);
-  border-radius: 16px;
-  padding: clamp(10px, 1.8vw, 14px) clamp(6px, 1.2vw, 10px) clamp(8px, 1.5vw, 12px);
+  border-radius: 12px;
+  padding: clamp(6px, 1.2vw, 10px) clamp(3px, 0.8vw, 6px) clamp(5px, 1vw, 8px);
   text-align: center;
   border: 1px solid transparent;
-  aspect-ratio: 1 / 1.1;
+  aspect-ratio: 1 / 1.08;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  position: relative;
+}
+
+.zod-card-count-badge {
+  position: absolute;
+  top: clamp(3px, 0.8vw, 6px);
+  left: clamp(3px, 0.8vw, 6px);
+  font-size: clamp(10px, 2vw, 13px);
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+  min-width: clamp(12px, 2vw, 16px);
+  text-align: center;
 }
 
 .zod-card-name {
-  font-size: clamp(16px, 3vw, 22px);
+  font-size: clamp(13px, 2.2vw, 17px);
   font-weight: 700;
   color: var(--text);
   line-height: 1.2;
-  margin-bottom: clamp(4px, 0.8vw, 6px);
+  margin-bottom: clamp(4px, 0.8vw, 7px);
   letter-spacing: 0.5px;
 }
 
 .zod-card-stats {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: clamp(4px, 0.8vw, 6px);
+  font-size: clamp(9px, 1.8vw, 11px);
+  margin-top: clamp(2px, 0.5vw, 4px);
 }
 
 .zod-card-count {
@@ -1924,18 +1938,33 @@ input[type="checkbox"]{
   font-weight: 600;
   color: var(--sub-text);
   background: rgba(120, 120, 128, 0.08);
-  padding: 2px 8px;
-  border-radius: 8px;
+  padding: clamp(2px, 0.4vw, 3px) clamp(5px, 1vw, 8px);
+  border-radius: 6px;
 }
 
-.zod-card-miss.miss-recent {
-  color: #30D158;
-  background: rgba(48, 209, 88, 0.1);
-}
-
-.zod-card-miss.miss-far {
+.zod-card-miss.zone-peak {
   color: #FF453A;
-  background: rgba(255, 69, 58, 0.1);
+  background: rgba(255, 69, 58, 0.12);
+}
+
+.zod-card-miss.zone-high {
+  color: #FF9500;
+  background: rgba(255, 149, 0, 0.12);
+}
+
+.zod-card-miss.zone-mid {
+  color: var(--primary);
+  background: rgba(0, 122, 255, 0.08);
+}
+
+.zod-card-miss.zone-low {
+  color: #30D158;
+  background: rgba(48, 209, 88, 0.12);
+}
+
+.zod-card-miss.zone-wait {
+  color: #AF52DE;
+  background: rgba(175, 82, 222, 0.12);
 }
 
 .recommend-card-grid {
