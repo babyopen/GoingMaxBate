@@ -153,6 +153,7 @@ const EventBinder = {
       if(action === 'toggleDetail') Business.toggleDetail(actionBtn.dataset.target);
       if(action === 'loadMoreHistory') Business.loadMoreHistory();
       if(action === 'toggleExcludeLock') Business.toggleExcludeLock();
+      if(action === 'toggleDBDetail') ViewZodiacPrediction.toggleDBDetail();
       return;
     }
 

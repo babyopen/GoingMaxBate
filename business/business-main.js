@@ -1217,15 +1217,7 @@ const Business = {
     ViewZodiacPrediction.switchTabUI(tab);
     if (tab === 'predict') Business.renderZodiacPrediction();
     if (tab === 'giong') Business.initGiongTab();
-    if (tab === 'doubao') {
-      var state = StateManager._state;
-      var historyData = state.analysis.historyData;
-      if (!historyData || !historyData.length) {
-        Business.loadHistoryCache();
-        historyData = StateManager._state.analysis.historyData;
-      }
-      ViewDoubao.renderAll(historyData);
-    }
+    if (tab === 'db') Business.initDBAlgorithm();
   },
 
   initGiongTab: () => {
@@ -1254,5 +1246,35 @@ const Business = {
       var zoneBt = ZodiacPrediction.runZoneBacktest(historyData);
       if (zoneBt) ViewZodiacPrediction.renderZoneBacktest(zoneBt);
     }, 150);
+  },
+
+  initDBAlgorithm: () => {
+    var state = StateManager._state;
+    var historyData = state.analysis.historyData;
+    if (!historyData || !historyData.length) {
+      Business.loadHistoryCache();
+      historyData = StateManager._state.analysis.historyData;
+    }
+    if (!historyData || !historyData.length) {
+      ViewZodiacPrediction.renderDBAlgorithm(null, null, null);
+      return;
+    }
+
+    var zodiacHistory = historyData.map(function(item) {
+      var codes = (item.openCode || '').split(',');
+      var specialIdx = codes.length >= 7 ? parseInt(codes[6], 10) : 0;
+      return BusinessPredictOld.NUM_ZODIAC_MAP[specialIdx] || '';
+    });
+
+    var result = BusinessPredictOld.predictOldVersion(zodiacHistory);
+
+    var heatWindow = zodiacHistory.slice(0, Math.min(10, zodiacHistory.length));
+    var heatMap = {};
+    BusinessPredictOld.ZODIAC_ORDER.forEach(function(z) {
+      var count = heatWindow.filter(function(h) { return h === z; }).length;
+      heatMap[z] = { count: count, level: count >= 3 ? 'hot' : (count >= 1 ? 'warm' : 'cold') };
+    });
+
+    ViewZodiacPrediction.renderDBAlgorithm(result, heatMap, zodiacHistory[0] || '');
   }
 };

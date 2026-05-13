@@ -151,13 +151,10 @@ const ViewZodiacPrediction = {
     document.querySelectorAll('.zodiac-tab-btn').forEach(function(btn) {
       btn.classList.toggle('active', btn.dataset.zodiacTab === tab);
     });
-    var panelMap = {
-      predict: 'zodiacPredictPanel',
-      giong: 'zodiacGiongPanel',
-      doubao: 'zodiacDoubaoPanel'
-    };
     document.querySelectorAll('.zodiac-tab-panel').forEach(function(panel) {
-      panel.classList.toggle('active', panel.id === panelMap[tab]);
+      var panelId = panel.id;
+      var panelMap = { predict: 'zodiacPredictPanel', giong: 'zodiacGiongPanel', db: 'zodiacDBPanel' };
+      panel.classList.toggle('active', panelId === panelMap[tab]);
     });
   },
 
@@ -431,5 +428,75 @@ const ViewZodiacPrediction = {
     var container = document.getElementById('giongBacktestPanel');
     if (!container) return;
     container.innerHTML = '<div class="empty-tip">计算中…</div>';
+  },
+
+  renderDBAlgorithm: function(result, heatMap, prevNum) {
+    var mainGrid = document.getElementById('dbMainGrid');
+    var backupGrid = document.getElementById('dbBackupGrid');
+    var heatGrid = document.getElementById('dbHeatGrid');
+
+    if (!result) {
+      if (mainGrid) mainGrid.innerHTML = '<div class="empty-tip">暂无历史数据，请先刷新数据</div>';
+      if (backupGrid) backupGrid.innerHTML = '';
+      if (heatGrid) heatGrid.innerHTML = '';
+      return;
+    }
+
+    if (mainGrid) {
+      if (!result.main || !result.main.length) {
+        mainGrid.innerHTML = '<div class="empty-tip">数据不足</div>';
+      } else {
+        var mHtml = '';
+        result.main.forEach(function(z) {
+          mHtml += '<div class="db-number-item">';
+          mHtml += '<div class="db-number-circle">' + z + '</div>';
+          mHtml += '</div>';
+        });
+        mainGrid.innerHTML = mHtml;
+      }
+    }
+
+    if (backupGrid) {
+      if (!result.backup || !result.backup.length) {
+        backupGrid.innerHTML = '';
+      } else {
+        var bHtml = '';
+        result.backup.forEach(function(z) {
+          bHtml += '<div class="db-number-item">';
+          bHtml += '<div class="db-number-circle">' + z + '</div>';
+          bHtml += '</div>';
+        });
+        backupGrid.innerHTML = bHtml;
+      }
+    }
+
+    if (heatGrid && heatMap) {
+      var tags = { hot: '热', warm: '温', cold: '冷' };
+      var zOrder = BusinessPredictOld.ZODIAC_ORDER;
+      var hHtml = '';
+      zOrder.forEach(function(z) {
+        var info = heatMap[z];
+        if (!info) return;
+        var tagClass = info.level === 'hot' ? 'is-hot' : (info.level === 'warm' ? 'is-warm' : 'is-cold');
+        hHtml += '<div class="db-heat-item">';
+        hHtml += '<div class="db-heat-zodiac">' + z + '</div>';
+        hHtml += '<div class="db-heat-count">' + info.count + '次</div>';
+        hHtml += '<span class="db-heat-tag ' + tagClass + '">' + tags[info.level] + '</span>';
+        hHtml += '</div>';
+      });
+      heatGrid.innerHTML = hHtml;
+    }
+  },
+
+  toggleDBDetail: function() {
+    var panel = document.getElementById('dbHeatPanel');
+    var toggle = document.getElementById('dbDetailToggle');
+    if (!panel || !toggle) return;
+    var isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'block' : 'none';
+    var arrow = toggle.querySelector('svg');
+    if (arrow) {
+      arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
   }
 };
