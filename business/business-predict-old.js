@@ -1,10 +1,10 @@
 const BusinessPredictOld = {
 
-  // 生肖与数字的映射表（1-12）
+  // 生肖与数字映射表（1-12）
   // 顺序：鼠=1, 牛=2, 虎=3, 兔=4, 龙=5, 蛇=6, 马=7, 羊=8, 猴=9, 鸡=10, 狗=11, 猪=12
   ZODIAC_ORDER: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'],
 
-  // 规则5-⑥：数字转生肖映射表（马=1，蛇=2，龙=3，兔=4，虎=5，牛=6，鼠=7，猪=8，狗=9，鸡=10，猴=11，羊=12）
+  // 数字转生肖映射表（马=1，蛇=2，龙=3，兔=4，虎=5，牛=6，鼠=7，猪=8，狗=9，鸡=10，猴=11，羊=12）
   NUM_ZODIAC_MAP: {
     1: '马', 2: '蛇', 3: '龙', 4: '兔', 5: '虎', 6: '牛',
     7: '鼠', 8: '猪', 9: '狗', 10: '鸡', 11: '猴', 12: '羊'
@@ -19,173 +19,146 @@ const BusinessPredictOld = {
     return idx !== -1 ? idx + 1 : 0;
   },
 
-  // 数字转生肖（规则5-⑥）
+  // 数字转生肖
   _toZodiac: function(num) {
     return this.NUM_ZODIAC_MAP[num] || '';
   },
 
-  // 获取数字所属区间（规则5-③）
+  // 获取数字所属区间
   _getZone: function(num) {
     if (num >= 1 && num <= 4) return 1;
     if (num >= 5 && num <= 8) return 2;
     return 3;
   },
 
-  // 计算区间热度分布（规则5-③）
-  _calcZoneRotation: function(nums) {
-    var zoneCount = { 1: 0, 2: 0, 3: 0 };
-    nums.forEach(function(n) { var z = BusinessPredictOld._getZone(n); zoneCount[z]++; });
-    var sorted = Object.entries(zoneCount).sort(function(a, b) { return b[1] - a[1]; });
-    return {
-      hot: parseInt(sorted[0][0]),
-      warm: sorted[1][0] ? parseInt(sorted[1][0]) : 0,
-      cold: sorted[2][0] ? parseInt(sorted[2][0]) : 0
-    };
-  },
-
-  // === 规则5：主预测函数 ===
+  // === 核心预测函数 ===
   predictOldVersion: function(history) {
-    // 规则1：输入校验
     if (!history || history.length < 10) return { main: [], backup: [] };
 
-    // 规则1-2：生肖转数字，取最近15期，范围1-12
-    var nums = history.slice(0, Math.min(15, history.length))
-      .map(function(z) { return BusinessPredictOld._toNum(z); })
-      .filter(function(n) { return n > 0; });
+    // 数据窗口：只看最近 12-24 期
+    var windowLen = Math.min(24, Math.max(12, history.length));
+    var nums = history.slice(0, windowLen).map(function(z) {
+      return this._toNum(z);
+    }.bind(this)).filter(function(n) { return n > 0; });
 
-    // 规则3：窗口 - 仅使用最后12期计算热度
-    var window12 = nums.slice(0, Math.min(12, nums.length));
-    // 规则5-①：近10期温号
-    var window10 = nums.slice(0, Math.min(10, nums.length));
-    // 上期开奖号（最新的在数组头部）
-    var prevNum = nums.length > 0 ? nums[0] : 0;
+    // 热度窗口：近 10 期
+    var heatWindow = nums.slice(0, 10);
+    var prevNum = nums[0] || 0; // 上期开奖号
 
-    // 规则4：热度定义
-    // 热号：出现≥3次，温号：1-2次，冷号：0次
+    // 热度定义
     var heatMap = {};
+    var warmPool = []; // 温号池（1-2次）
+    var hotPool = [];  // 热号池（≥3次）
+    var coldPool = []; // 冷号池（0次）
     for (var i = 1; i <= 12; i++) {
-      var count = window12.filter(function(n) { return n === i; }).length;
+      var count = heatWindow.filter(function(n) { return n === i; }).length;
       heatMap[i] = { count: count, level: count >= 3 ? 'hot' : (count >= 1 ? 'warm' : 'cold') };
+      if (heatMap[i].level === 'hot') hotPool.push(i);
+      else if (heatMap[i].level === 'warm') warmPool.push(i);
+      else coldPool.push(i);
     }
 
-    // 规则5-①：提取近10期温号作为主池
-    var mainPool = [];
-    window10.forEach(function(n) {
-      if (heatMap[n].level === 'warm' && mainPool.indexOf(n) === -1) {
-        mainPool.push(n);
-      }
+    // 规则4-1：优先温号闭环（近几期反复开出的温号组）
+    var warmCandidates = warmPool.map(function(n) {
+      return { num: n, weight: heatMap[n].count * 10 };
     });
 
-    // 规则5-②：上期开奖号 → ±1、±2、同区、同尾，加权优先
-    var prevCandidates = {};
+    // 规则4-3：回踩惯性（上期开号 → ±1、±2、同尾、同区温号必带）
+    var inertiaCandidates = [];
     if (prevNum > 0) {
+      var prevZone = this._getZone(prevNum);
       // ±1、±2
-      [prevNum - 2, prevNum - 1, prevNum + 1, prevNum + 2]
-        .filter(function(n) { return n >= 1 && n <= 12; })
-        .forEach(function(n) {
-          var w = Math.abs(n - prevNum) === 1 ? 2 : 1; // ±1权重2，±2权重1
-          prevCandidates[n] = (prevCandidates[n] || 0) + w;
-        });
-      // 同区
-      var prevZone = BusinessPredictOld._getZone(prevNum);
-      BusinessPredictOld.ZONES[prevZone]
-        .filter(function(n) { return n !== prevNum && !(n in prevCandidates); })
-        .forEach(function(n) {
-          prevCandidates[n] = (prevCandidates[n] || 0) + 1;
-        });
-      // 同尾（1-12范围内，同尾数即个位相同，如2和12）
+      [prevNum - 2, prevNum - 1, prevNum + 1, prevNum + 2].forEach(function(n) {
+        if (n >= 1 && n <= 12) {
+          var w = Math.abs(n - prevNum) === 1 ? 3 : 2;
+          inertiaCandidates.push({ num: n, weight: w });
+        }
+      });
+      // 同尾
       var prevTail = prevNum % 10;
-      [prevTail, prevTail + 10]
-        .filter(function(n) { return n >= 1 && n <= 12 && n !== prevNum && !(n in prevCandidates); })
-        .forEach(function(n) {
-          prevCandidates[n] = (prevCandidates[n] || 0) + 1;
-        });
+      [prevTail, prevTail + 10].filter(function(n) { return n >= 1 && n <= 12 && n !== prevNum; }).forEach(function(n) {
+        inertiaCandidates.push({ num: n, weight: 2 });
+      });
+      // 同区
+      this.ZONES[prevZone].filter(function(n) { return n !== prevNum; }).forEach(function(n) {
+        inertiaCandidates.push({ num: n, weight: 1 });
+      });
     }
 
-    // 规则5-③：区间轮转，优先相邻/同区
-    var zoneRot = BusinessPredictOld._calcZoneRotation(window12);
-    var prevZoneNum = prevNum > 0 ? BusinessPredictOld._getZone(prevNum) : 0;
-    // 优先相邻区间和同区
+    // 规则4-2：区间轮转（上期开哪区 → 下期优先相邻区/回踩同区）
     var targetZones = [];
-    if (prevZoneNum === 1) targetZones = [1, 2];      // 1区→同区+2区
-    else if (prevZoneNum === 2) targetZones = [2, 1, 3]; // 2区→同区+1区+3区
-    else targetZones = [3, 2];                          // 3区→同区+2区
+    if (prevNum > 0) {
+      var pZone = this._getZone(prevNum);
+      if (pZone === 1) targetZones = [1, 2];
+      else if (pZone === 2) targetZones = [2, 1, 3];
+      else targetZones = [3, 2];
+    }
 
-    // 合并候选池：主池温号（目标区内）+ 上期衍生号（目标区内）
-    var candidatePool = {};
-    mainPool.forEach(function(n) {
-      if (targetZones.indexOf(BusinessPredictOld._getZone(n)) !== -1) {
-        candidatePool[n] = { heat: 'warm', prevW: prevCandidates[n] || 0 };
+    // 合并候选池，优先温号 + 区间轮转加权
+    var finalCandidates = {};
+    warmCandidates.forEach(function(c) {
+      var n = c.num;
+      var zoneBonus = targetZones.indexOf(this._getZone(n)) !== -1 ? 5 : 0;
+      finalCandidates[n] = { weight: c.weight + zoneBonus, level: 'warm' };
+    }.bind(this));
+
+    inertiaCandidates.forEach(function(c) {
+      var n = c.num;
+      if (!finalCandidates[n]) {
+        var zoneBonus = targetZones.indexOf(this._getZone(n)) !== -1 ? 3 : 0;
+        finalCandidates[n] = { weight: c.weight + zoneBonus, level: 'inertia' };
+      } else {
+        finalCandidates[n].weight += c.weight;
       }
-    });
-    Object.keys(prevCandidates).forEach(function(k) {
-      var n = parseInt(k);
-      if (!(n in candidatePool) && targetZones.indexOf(BusinessPredictOld._getZone(n)) !== -1) {
-        candidatePool[n] = { heat: heatMap[n].level, prevW: prevCandidates[n] };
-      }
+    }.bind(this));
+
+    // 规则4-4：冷号轻补（遗漏 5-15 期可带 1 个，>20 期不选）
+    var coldCandidates = coldPool.filter(function(n) {
+      var missCount = heatWindow.filter(function(x) { return x === n; }).length === 0 ? heatWindow.length : 0;
+      return missCount >= 5 && missCount <= 15;
     });
 
-    // 规则5-④：冷号过滤（遗漏5-15期可带1个，>20期不选）
-    var coldCandidates = [];
-    for (var i = 1; i <= 12; i++) {
-      if (heatMap[i].level === 'cold') {
-        // 在12期窗口中出现0次即为遗漏≥12期
-        var missCount = window12.filter(function(n) { return n === i; }).length === 0 ? window12.length : 0;
-        if (missCount >= 5 && missCount <= 15) {
-          coldCandidates.push(i);
+    // 规则5：最终选号（主推4码，温号为主+1个轻冷）
+    var sorted = Object.keys(finalCandidates).map(function(k) {
+      return { num: parseInt(k), weight: finalCandidates[k].weight, level: finalCandidates[k].level };
+    }).sort(function(a, b) { return b.weight - a.weight; });
+
+    var main = [], backup = [], used = {};
+
+    // 主推4码：优先温号（至少3个温号）
+    var warmUsed = 0;
+    for (var i = 0; i < sorted.length; i++) {
+      if (main.length >= 4) break;
+      var c = sorted[i];
+      if (c.level === 'warm' || c.level === 'inertia') {
+        main.push(c.num);
+        used[c.num] = true;
+        if (c.level === 'warm') warmUsed++;
+      }
+    }
+
+    // 温号不足3个，从冷号中补1个（遗漏5-15期）
+    if (warmUsed < 3 && coldCandidates.length > 0) {
+      for (var j = 0; j < coldCandidates.length && main.length < 4; j++) {
+        if (!used[coldCandidates[j]]) {
+          main.push(coldCandidates[j]);
+          used[coldCandidates[j]] = true;
+          break;
         }
       }
     }
 
-    // 规则5-⑤：最终选号（主推4码，备选2码，温≥3，冷≤1）
-    var warmList = [], coldList = [];
-    Object.keys(candidatePool).forEach(function(k) {
-      var n = parseInt(k);
-      if (candidatePool[n].heat === 'warm') {
-        warmList.push({ num: n, score: heatMap[n].count * 10 + candidatePool[n].prevW * 5 });
-      } else if (candidatePool[n].heat !== 'hot') {
-        coldList.push({ num: n, score: 5 });
-      }
-    });
-    warmList.sort(function(a, b) { return b.score - a.score; });
-    coldList.sort(function(a, b) { return b.score - a.score; });
-
-    var main = [], backup = [], warmCount = 0, coldCount = 0;
-
-    // 先选3个温号
-    for (var i = 0; i < warmList.length && warmCount < 3; i++) {
-      main.push(warmList[i].num);
-      warmCount++;
+    // 备选2码：回踩/补位
+    for (var k = 0; k < sorted.length && backup.length < 2; k++) {
+      if (!used[sorted[k].num]) backup.push(sorted[k].num);
     }
+    // 仍不足则补温号
+    warmPool.forEach(function(n) { if (!used[n] && backup.length < 2) backup.push(n); });
 
-    // 不足4码，从冷号中取1个（遗漏5-15期）
-    if (main.length < 4 && coldList.length > 0 && coldCount < 1) {
-      main.push(coldList[0].num);
-      coldCount++;
-    }
-
-    // 仍不足4码，补充温号
-    while (main.length < 4 && warmCount < warmList.length) {
-      main.push(warmList[warmCount].num);
-      warmCount++;
-    }
-
-    // 备选2码：从剩余温号、冷号中选取
-    var used = {};
-    main.forEach(function(n) { used[n] = true; });
-    warmList.forEach(function(c) { if (!used[c.num]) backup.push(c.num); });
-    coldList.forEach(function(c) { if (!used[c.num] && backup.length < 2) backup.push(c.num); });
-
-    // 补齐备选至2码
-    while (backup.length < 2) {
-      var f = warmList.find(function(c) { return main.indexOf(c.num) === -1 && backup.indexOf(c.num) === -1; });
-      if (f) backup.push(f.num); else break;
-    }
-
-    // 规则5-⑥：数字转生肖
+    // 数字转生肖
     return {
-      main: main.map(function(n) { return BusinessPredictOld._toZodiac(n); }).filter(Boolean),
-      backup: backup.map(function(n) { return BusinessPredictOld._toZodiac(n); }).filter(Boolean)
+      main: main.map(function(n) { return this._toZodiac(n); }.bind(this)).filter(Boolean),
+      backup: backup.map(function(n) { return this._toZodiac(n); }.bind(this)).filter(Boolean)
     };
   }
 };
@@ -193,5 +166,5 @@ const BusinessPredictOld = {
 // 测试调用示例：
 // var history = ['马', '蛇', '龙', '兔', '虎', '牛', '鼠', '猪', '狗', '鸡', '猴', '羊', '马', '蛇', '龙'];
 // var result = BusinessPredictOld.predictOldVersion(history);
-// console.log(result);
-// 输出示例: { main: ['蛇', '龙', '兔', '马'], backup: ['虎', '牛'] }
+// console.log('主推:', result.main); // 如：['蛇', '龙', '兔', '马']
+// console.log('备选:', result.backup); // 如：['虎', '牛']
