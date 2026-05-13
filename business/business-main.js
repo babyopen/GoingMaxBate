@@ -136,7 +136,8 @@ const Business = {
       const filterItem = {
         name: filterName,
         selected: Utils.deepClone(state.selected),
-        excluded: Utils.deepClone(state.excluded)
+        excluded: Utils.deepClone(state.excluded),
+        locked: Utils.deepClone(state.locked)
       };
       const success = Storage.saveFilter(filterItem);
       if(success){
@@ -157,7 +158,8 @@ const Business = {
 
     StateManager.setState({
       selected: Utils.deepClone(item.selected),
-      excluded: Utils.deepClone(item.excluded)
+      excluded: Utils.deepClone(item.excluded),
+      locked: Utils.deepClone(item.locked || {})
     });
     Toast.show('加载成功');
   },

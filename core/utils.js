@@ -79,7 +79,8 @@ const Utils = {
       typeof item === 'object' && 
       typeof item.name === 'string' && 
       item.selected && typeof item.selected === 'object' &&
-      Array.isArray(item.excluded);
+      Array.isArray(item.excluded) &&
+      (!item.locked || typeof item.locked === 'object');
   },
 
   /**
