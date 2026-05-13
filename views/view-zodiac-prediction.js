@@ -339,7 +339,7 @@ const ViewZodiacPrediction = {
     container.innerHTML = html;
   },
 
-  renderZoneRecommend: function(recommend) {
+  renderZoneRecommend: function(recommend, nextExpect) {
     var container = document.getElementById('giongRecommendPanel');
     if (!container) return;
 
@@ -352,7 +352,10 @@ const ViewZodiacPrediction = {
     var rankClasses = ['rank-gold', 'rank-silver', 'rank-silver', 'rank-bronze', 'rank-bronze', 'rank-bronze'];
     var rankIcons = ['🥇', '🥈', '🥉', '4', '5', '6'];
 
-    var html = '<div class="analysis-section-title">区域综合推荐</div>';
+    var title = '区域综合推荐';
+    if (nextExpect) title = '第' + nextExpect + '期推荐';
+
+    var html = '<div class="analysis-section-title">' + title + '</div>';
     html += '<div class="recommend-card-grid">';
     top6.forEach(function(entry, idx) {
       var rankClass = rankClasses[idx] || 'rank-default';

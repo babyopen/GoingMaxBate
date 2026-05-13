@@ -1236,7 +1236,8 @@ const Business = {
 
     if (freqResult && patternResult) {
       var recommend = ZodiacPrediction.getZoneRecommend(historyData, freqResult, patternResult);
-      ViewZodiacPrediction.renderZoneRecommend(recommend);
+      var nextExpect = (Number(historyData[0].expect || 0) + 1) || '';
+      ViewZodiacPrediction.renderZoneRecommend(recommend, nextExpect);
     }
 
     ViewZodiacPrediction.renderZoneBacktestEmpty();
