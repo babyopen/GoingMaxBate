@@ -1260,21 +1260,28 @@ const Business = {
       return;
     }
 
-    var zodiacHistory = historyData.map(function(item) {
+    var zodiacNums = historyData.map(function(item) {
       var codes = (item.openCode || '').split(',');
-      var specialIdx = codes.length >= 7 ? parseInt(codes[6], 10) : 0;
-      return BusinessPredictOld.NUM_ZODIAC_MAP[specialIdx] || '';
+      return codes.length >= 7 ? parseInt(codes[6], 10) : 0;
     });
 
-    var result = BusinessPredictOld.predictOldVersion(zodiacHistory);
+    var result = BusinessPredictOld.predictOldVersion(zodiacNums);
 
-    var heatWindow = zodiacHistory.slice(0, Math.min(10, zodiacHistory.length));
+    var last10 = zodiacNums.filter(function(n) { return n >= 1 && n <= 12; }).slice(0, 10);
     var heatMap = {};
     BusinessPredictOld.ZODIAC_ORDER.forEach(function(z) {
-      var count = heatWindow.filter(function(h) { return h === z; }).length;
-      heatMap[z] = { count: count, level: count >= 3 ? 'hot' : (count >= 1 ? 'warm' : 'cold') };
+      heatMap[z] = { count: 0, level: 'cold' };
+    });
+    last10.forEach(function(n) {
+      var zName = BusinessPredictOld._toZodiac(n);
+      if (zName && heatMap[zName]) {
+        heatMap[zName].count++;
+      }
+    });
+    BusinessPredictOld.ZODIAC_ORDER.forEach(function(z) {
+      heatMap[z].level = heatMap[z].count >= 3 ? 'hot' : (heatMap[z].count >= 1 ? 'warm' : 'cold');
     });
 
-    ViewZodiacPrediction.renderDBAlgorithm(result, heatMap, zodiacHistory[0] || '');
+    ViewZodiacPrediction.renderDBAlgorithm(result, heatMap, last10[0] || '');
   }
 };
