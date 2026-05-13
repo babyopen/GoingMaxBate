@@ -1,180 +1,155 @@
 const BusinessPredictOld = {
 
-  // 规则5-⑥：生肖映射表（马=1，蛇=2，龙=3，兔=4，虎=5，牛=6，鼠=7，猪=8，狗=9，鸡=10，猴=11，羊=12）
+  // 规则：生肖映射表（马=1，蛇=2，龙=3，兔=4，虎=5，牛=6，鼠=7，猪=8，狗=9，鸡=10，猴=11，羊=12）
   NUM_ZODIAC_MAP: {
     1: '马', 2: '蛇', 3: '龙', 4: '兔', 5: '虎', 6: '牛',
     7: '鼠', 8: '猪', 9: '狗', 10: '鸡', 11: '猴', 12: '羊'
   },
 
-  // 传统生肖顺序（鼠=1,牛=2,...,用于UI展示）
+  // 传统生肖顺序（用于UI热度展示）
   ZODIAC_ORDER: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'],
 
-  // 规则5-③：区间定义（1区:1-4, 2区:5-8, 3区:9-12）
+  // 规则4-2：区间定义（一区:1-4, 二区:5-8, 三区:9-12）
   ZONES: { 1: [1, 2, 3, 4], 2: [5, 6, 7, 8], 3: [9, 10, 11, 12] },
 
-  // 数字转生肖
-  _toZodiac: function(num) {
-    return this.NUM_ZODIAC_MAP[num] || '';
-  },
+  _toZodiac: function(num) { return this.NUM_ZODIAC_MAP[num] || ''; },
 
-  // 规则5-③：获取数字所属区间
   _getZone: function(num) {
     if (num >= 1 && num <= 4) return 1;
     if (num >= 5 && num <= 8) return 2;
     return 3;
   },
 
-  // === 规则5：核心预测函数 ===
-  // 规则1：输入为历史开奖数字数组（最近15期），如：[7,6,9,5,1,7,9,0,5,1,7,6]
+  // === 核心预测：短线顺势 温号闭环 区间轮转 ===
+  // 输入：历史开奖数字数组 [7,6,9,5,...]，输出: { main:[], backup:[] }
   predictOldVersion: function(history) {
-    // 规则2：号码范围01-12，过滤无效值
     var nums = history.filter(function(n) { return n >= 1 && n <= 12; });
     if (nums.length < 8) return { main: [], backup: [] };
 
-    // 规则3：窗口 - 仅使用最后10期
-    var last10 = nums.slice(0, 10);
-    // 上期开奖号（规则5-②）
-    var prevNum = last10[0] || 0;
+    // 规则2：数据窗口 最近10-15期
+    var pool = nums.slice(0, 15);               // 数据池（15期）
+    var last10 = pool.slice(0, 10);             // 热度窗口（10期）
+    var last5 = pool.slice(0, 5);               // 闭环窗口（5期，追踪最近反复）
+    var prevNum = last10[0] || 0;               // 上期开奖号
 
-    // 规则4：热度定义（在最后10期窗口中统计）
-    // 热号≥3次，温号1-2次，冷号0次
+    // 规则3：热度定义 — 在最近10期中统计
     var heatMap = {};
-    var warmPool = [];
-    var hotPool = [];
-    var coldPool = [];
+    var warmPool = [], hotPool = [], coldPool = [];
     for (var i = 1; i <= 12; i++) {
-      var count = last10.filter(function(n) { return n === i; }).length;
-      heatMap[i] = { count: count, level: count >= 3 ? 'hot' : (count >= 1 ? 'warm' : 'cold') };
+      var cnt = last10.filter(function(n) { return n === i; }).length;
+      heatMap[i] = { count: cnt, level: cnt >= 3 ? 'hot' : (cnt >= 1 ? 'warm' : 'cold') };
       if (heatMap[i].level === 'hot') hotPool.push(i);
       else if (heatMap[i].level === 'warm') warmPool.push(i);
       else coldPool.push(i);
     }
 
-    // 规则5-①：提取近10期温号作为主池
-    var warmCandidates = warmPool.map(function(n) {
-      return { num: n, weight: heatMap[n].count * 10 };
+    // 规则4-1：优先温号闭环 — 近几期反复开出的温号组，循环顺延
+    // 最近5期内出现的温号权重更高（闭环效应）
+    var warmClosedLoop = [];
+    var seenIn5 = {};
+    last5.forEach(function(n) { seenIn5[n] = true; });
+    warmPool.forEach(function(n) {
+      var baseW = heatMap[n].count * 10;           // 基础：出现次数×10
+      var loopBonus = seenIn5[n] ? 15 : 0;          // 闭环：近5期出现+15
+      var orderBonus = last5.indexOf(n) >= 0 ? (5 - last5.indexOf(n)) * 2 : 0; // 越近权重越高
+      warmClosedLoop.push({ num: n, weight: baseW + loopBonus + orderBonus });
     });
+    warmClosedLoop.sort(function(a, b) { return b.weight - a.weight; });
 
-    // 规则5-②：上期开奖号 → ±1、±2、同区、同尾，加权优先
-    var inertiaCandidates = [];
-    if (prevNum > 0) {
-      var prevZone = this._getZone(prevNum);
-      // ±1（权重3）、±2（权重2）
-      [prevNum - 2, prevNum - 1, prevNum + 1, prevNum + 2].forEach(function(n) {
-        if (n >= 1 && n <= 12) {
-          var w = Math.abs(n - prevNum) === 1 ? 3 : 2;
-          inertiaCandidates.push({ num: n, weight: w });
-        }
-      });
-      // 同尾（权重2）
-      var prevTail = prevNum % 10;
-      [prevTail, prevTail + 10].filter(function(n) { return n >= 1 && n <= 12 && n !== prevNum; }).forEach(function(n) {
-        inertiaCandidates.push({ num: n, weight: 2 });
-      });
-      // 同区（权重1）
-      this.ZONES[prevZone].filter(function(n) { return n !== prevNum; }).forEach(function(n) {
-        inertiaCandidates.push({ num: n, weight: 1 });
-      });
-    }
-
-    // 规则5-③：区间轮转，优先相邻/同区
+    // 规则4-2：区间轮转 — 上期开哪区→优先相邻区/回踩同区温号
     var targetZones = [];
     if (prevNum > 0) {
-      var pZone = this._getZone(prevNum);
-      if (pZone === 1) targetZones = [1, 2];
-      else if (pZone === 2) targetZones = [2, 1, 3];
-      else targetZones = [3, 2];
+      var pz = this._getZone(prevNum);
+      if (pz === 1) targetZones = [1, 2];           // 一区→同区+二区
+      else if (pz === 2) targetZones = [2, 1, 3];   // 二区→同区+一区+三区
+      else targetZones = [3, 2];                     // 三区→同区+二区
     }
 
-    // 合并候选池
-    var finalCandidates = {};
-    warmCandidates.forEach(function(c) {
-      var n = c.num;
-      var zoneBonus = targetZones.indexOf(this._getZone(n)) !== -1 ? 5 : 0;
-      finalCandidates[n] = { weight: c.weight + zoneBonus, level: 'warm' };
-    }.bind(this));
+    // 规则4-3：回踩惯性 — 上期号码 ±1、±2、同尾、同区温号 必带
+    var inertiaWarm = [];  // 惯性号中的温号（必带）
+    var inertiaOther = []; // 惯性号中的其他号
+    if (prevNum > 0) {
+      var prevZone = this._getZone(prevNum);
+      // ±1（最近），±2（次近）
+      [prevNum - 1, prevNum + 1, prevNum - 2, prevNum + 2].forEach(function(n) {
+        if (n >= 1 && n <= 12) {
+          if (heatMap[n].level === 'warm') inertiaWarm.push(n);
+          else if (heatMap[n].level !== 'hot') inertiaOther.push(n);
+        }
+      });
+      // 同尾温号
+      var prevTail = prevNum % 10;
+      [prevTail, prevTail + 10].filter(function(n) { return n >= 1 && n <= 12 && n !== prevNum; }).forEach(function(n) {
+        if (heatMap[n].level === 'warm' && inertiaWarm.indexOf(n) === -1) inertiaWarm.push(n);
+        else if (heatMap[n].level !== 'hot' && inertiaOther.indexOf(n) === -1) inertiaOther.push(n);
+      });
+      // 同区温号
+      this.ZONES[prevZone].filter(function(n) { return n !== prevNum; }).forEach(function(n) {
+        if (heatMap[n].level === 'warm' && inertiaWarm.indexOf(n) === -1) inertiaWarm.push(n);
+        else if (heatMap[n].level !== 'hot' && inertiaOther.indexOf(n) === -1) inertiaOther.push(n);
+      });
+    }
 
-    inertiaCandidates.forEach(function(c) {
-      var n = c.num;
-      if (!finalCandidates[n]) {
-        var zoneBonus = targetZones.indexOf(this._getZone(n)) !== -1 ? 3 : 0;
-        finalCandidates[n] = { weight: c.weight + zoneBonus, level: heatMap[n].level };
-      } else {
-        finalCandidates[n].weight += c.weight;
-      }
-    }.bind(this));
-
-    // 规则5-④：冷号 - 遗漏5-15期可带1个，>20期不选
-    var coldCandidates = coldPool.filter(function(n) {
-      return last10.indexOf(n) === -1;
-    }).filter(function(n) {
-      // 往前追溯到第20期看遗漏
-      var missCount = 0;
-      for (var j = 0; j < nums.length && j < 20; j++) {
-        if (nums[j] === n) break;
-        missCount++;
-      }
-      return missCount >= 5 && missCount <= 15;
+    // 规则4-4：冷号轻补 — 遗漏5-15期可带1个，>20期不选
+    var coldCandidates = [];
+    coldPool.forEach(function(n) {
+      var miss = 0;
+      for (var j = 0; j < pool.length && j < 20; j++) { if (pool[j] === n) break; miss++; }
+      if (miss >= 5 && miss <= 15) coldCandidates.push(n);
     });
 
-    // 规则5-⑤：最终选号（主推4码，备选2码，温≥3，冷≤1）
-    var sorted = Object.keys(finalCandidates).map(function(k) {
-      return { num: parseInt(k), weight: finalCandidates[k].weight, level: finalCandidates[k].level };
-    }).sort(function(a, b) { return b.weight - a.weight; });
+    // === 规则5：最终选号 ===
+    var selected = [], used = {};
 
-    var main = [], backup = [], used = {};
+    // Step1: 优先从温号闭环中选（目标区间内加权）
+    warmClosedLoop.forEach(function(c) {
+      if (selected.length >= 4) return;
+      var inTarget = targetZones.indexOf(this._getZone(c.num)) !== -1;
+      if (inTarget && heatMap[c.num].level === 'warm' && !used[c.num]) {
+        selected.push(c.num); used[c.num] = true;
+      }
+    }.bind(this));
 
-    // 主推：先选3个温号
-    var warmUsed = 0;
-    for (var a = 0; a < sorted.length && main.length < 3; a++) {
-      if (sorted[a].level === 'warm') {
-        main.push(sorted[a].num);
-        used[sorted[a].num] = true;
-        warmUsed++;
+    // Step2: 回踩惯性温号 必带
+    inertiaWarm.forEach(function(n) {
+      if (selected.length >= 4) return;
+      if (!used[n]) { selected.push(n); used[n] = true; }
+    });
+
+    // Step3: 补齐温号（从闭环池剩余）
+    warmClosedLoop.forEach(function(c) {
+      if (selected.length >= 4) return;
+      if (!used[c.num] && heatMap[c.num].level === 'warm') { selected.push(c.num); used[c.num] = true; }
+    });
+
+    // Step4: 冷号轻补（温≥3后，冷≤1）
+    var warmCount = selected.filter(function(n) { return heatMap[n].level === 'warm'; }).length;
+    if (warmCount >= 3 && selected.length < 4 && coldCandidates.length > 0) {
+      for (var ci = 0; ci < coldCandidates.length && selected.length < 4; ci++) {
+        if (!used[coldCandidates[ci]]) { selected.push(coldCandidates[ci]); used[coldCandidates[ci]] = true; break; }
       }
     }
 
-    // 温号不足3个，从路属性选入补足
-    while (warmUsed < 3 && main.length < 4) {
-      for (var b = 0; b < sorted.length && main.length < 4; b++) {
-        if (!used[sorted[b].num]) {
-          main.push(sorted[b].num);
-          used[sorted[b].num] = true;
-          warmUsed++;
-          break;
-        }
-      }
-      if (warmUsed >= 3) break;
-    }
+    // Step5: 仍不足4码，从惯性其他号 + 闭环池补位（不逆势，不全热）
+    inertiaOther.forEach(function(n) {
+      if (selected.length >= 4) return;
+      if (!used[n]) { selected.push(n); used[n] = true; }
+    });
+    warmClosedLoop.forEach(function(c) {
+      if (selected.length >= 4) return;
+      if (!used[c.num]) { selected.push(c.num); used[c.num] = true; }
+    });
 
-    // 从冷号中补1个（遗漏5-15期），冷≤1
-    if (warmUsed >= 3 && coldCandidates.length > 0 && main.length < 4) {
-      for (var c = 0; c < coldCandidates.length && main.length < 4; c++) {
-        if (!used[coldCandidates[c]]) {
-          main.push(coldCandidates[c]);
-          used[coldCandidates[c]] = true;
-          break;
-        }
-      }
-    }
-
-    // 仍不足4码则从候选池补充
-    for (var d = 0; d < sorted.length && main.length < 4; d++) {
-      if (!used[sorted[d].num]) {
-        main.push(sorted[d].num);
-        used[sorted[d].num] = true;
-      }
-    }
-
-    // 备选2码
-    for (var e = 0; e < sorted.length && backup.length < 2; e++) {
-      if (!used[sorted[e].num]) backup.push(sorted[e].num);
-    }
+    // 备选2码：从剩余温号 + 惯性号中补位
+    var backup = [];
+    inertiaWarm.forEach(function(n) { if (!used[n] && backup.length < 2) backup.push(n); });
+    inertiaOther.forEach(function(n) { if (!used[n] && backup.length < 2) backup.push(n); });
+    warmClosedLoop.forEach(function(c) { if (!used[c.num] && backup.length < 2) backup.push(c.num); });
     warmPool.forEach(function(n) { if (!used[n] && backup.length < 2) backup.push(n); });
 
-    // 规则5-⑥ & 规则6：数字转生肖，输出 { main: [x,x,x,x], backup: [x,x] }
+    // 规则5-⑥：数字→生肖，输出 { main: [x,x,x,x], backup: [x,x] }
     return {
-      main: main.map(function(n) { return this._toZodiac(n); }.bind(this)).filter(Boolean),
+      main: selected.map(function(n) { return this._toZodiac(n); }.bind(this)).filter(Boolean),
       backup: backup.map(function(n) { return this._toZodiac(n); }.bind(this)).filter(Boolean)
     };
   }
