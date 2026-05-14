@@ -85,6 +85,9 @@ const ZodiacPrediction = {
     });
 
     var sorted = Object.entries(scores).sort(function(a, b) { return b[1] - a[1]; });
+
+    sorted = ZodiacPrediction._applyPenaltyRules(sorted, list);
+
     var maxScore = sorted.length > 0 ? sorted[0][1] : 0;
     var minScore = sorted.length > 0 ? sorted[sorted.length - 1][1] : 0;
     var scoreRange = maxScore - minScore || 1;
@@ -379,6 +382,50 @@ const ZodiacPrediction = {
       }
     });
     return scores;
+  },
+
+  _applyPenaltyRules: function(sortedScores, list) {
+    if (!sortedScores || sortedScores.length === 0 || list.length < 2) {
+      return sortedScores;
+    }
+
+    var latestSpecial = ZodiacPrediction._getSpecial(list[0]);
+    var lastZodiac = latestSpecial ? latestSpecial.zod : null;
+
+    var windowSize = 12;
+    var windowData = list.slice(0, windowSize);
+    var frequencyMap = {};
+    ZodiacPrediction.ZODIAC_ORDER.forEach(function(z) {
+      frequencyMap[z] = 0;
+    });
+    windowData.forEach(function(item) {
+      var s = ZodiacPrediction._getSpecial(item);
+      if (ZodiacPrediction.ZODIAC_ORDER.indexOf(s.zod) !== -1) {
+        frequencyMap[s.zod]++;
+      }
+    });
+
+    var PENALTY_LAST = 15;
+    var PENALTY_FREQ = 20;
+
+    var result = sortedScores.map(function(entry) {
+      var zodiac = entry[0];
+      var score = entry[1];
+
+      if (zodiac === lastZodiac) {
+        score -= PENALTY_LAST;
+      }
+
+      if (frequencyMap[zodiac] >= 3) {
+        score -= PENALTY_FREQ;
+      }
+
+      return [zodiac, Math.max(0, score)];
+    });
+
+    result.sort(function(a, b) { return b[1] - a[1]; });
+
+    return result;
   },
 
   runBacktest: function(historyData) {
