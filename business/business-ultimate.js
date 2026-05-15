@@ -163,6 +163,7 @@ const BusinessUltimate = {
     var currFreq24 = this.getCurrent24Freq(history);
     var cooling = this.getCoolingInfo();
     var blackList = [];
+    var preReleaseList = [];
 
     for (var num = 1; num <= 12; num++) {
       var curr12 = currFreq12[num] || 0;
@@ -170,14 +171,33 @@ const BusinessUltimate = {
       var curr24 = currFreq24[num] || 0;
 
       if (curr12 >= this.DOWN_WEIGHT_LIMIT) {
-        if (next12 >= 3) {
+        var isIntensive = this._isIntensivePattern(history, num, this.WINDOW_SIZE);
+        var isRealHot24 = (curr24 >= 5);
+        var isAtCriticalEdge = this._isAtCriticalEdge(history, num, this.WINDOW_SIZE);
+
+        if (isAtCriticalEdge && curr12 === 3 && next12 === 2) {
+          preReleaseList.push(num);
+        } else if (curr12 >= 3 && isRealHot24 && isIntensive) {
+          blackList.push(num);
+        } else if (curr12 >= 3 && !isRealHot24 && !isIntensive) {
+          preReleaseList.push(num);
+        } else if (next12 >= 3) {
           blackList.push(num);
         } else if (next12 === 2) {
-          // 临界预判：即将从3降到2，提前解权（不需要等冷却）
+          preReleaseList.push(num);
+        } else if (isIntensive && isRealHot24) {
           blackList.push(num);
         } else {
-          blackList.push(num);
+          preReleaseList.push(num);
         }
+      }
+    }
+
+    for (var i = 0; i < preReleaseList.length; i++) {
+      var num = preReleaseList[i];
+      if (cooling[num] && cooling[num].coolingCount >= this.COOLING_PERIOD) {
+      } else if (!cooling[num] || cooling[num].coolingCount < this.COOLING_PERIOD) {
+        blackList.push(num);
       }
     }
 
@@ -186,17 +206,47 @@ const BusinessUltimate = {
     return blackList;
   },
 
+  _isAtCriticalEdge: function(history, num, windowSize) {
+    var positions = this.getNumberPositions(history, num, windowSize);
+    if (positions.length < 3) return false;
+
+    positions.sort(function(a, b) { return a - b; });
+    var earliestPos = positions[0];
+    return earliestPos >= windowSize - 2;
+  },
+
+  _isIntensivePattern: function(history, num, windowSize) {
+    var positions = this.getNumberPositions(history, num, windowSize);
+    if (positions.length < 3) return false;
+
+    positions.sort(function(a, b) { return a - b; });
+    var span = positions[positions.length - 1] - positions[0];
+    return span <= 6;
+  },
+
   filterByWeight: function(history, candidateNums, config) {
     var blackList = this.getDownWeightBlackList(history);
     var sortedHistory = history.slice().sort(function(a, b) { return a.issue - b.issue; });
+    var currFreq12 = this.getCurrent12Freq(history);
+    var nextFreq12 = this.getNext12Freq(history);
 
     var main = [];
     var backup = [];
+    var silent = [];
     var i, num;
 
     for (i = 0; i < candidateNums.length; i++) {
       num = candidateNums[i];
-      if (blackList.indexOf(num) === -1) {
+      if (blackList.indexOf(num) !== -1) {
+        continue;
+      }
+
+      var next12 = nextFreq12[num] || 0;
+      if (next12 >= 2) {
+        main.push(num);
+      } else if (next12 === 1) {
+        backup.push(num);
+      } else {
         main.push(num);
       }
     }
@@ -205,16 +255,45 @@ const BusinessUltimate = {
       var chain = config.cycleChain;
       for (i = 0; i < chain.length && main.length < 4; i++) {
         num = chain[i];
-        if (main.indexOf(num) === -1 && blackList.indexOf(num) === -1) {
+        if (main.indexOf(num) === -1 && blackList.indexOf(num) === -1 && backup.indexOf(num) === -1) {
+          var next12 = nextFreq12[num] || 0;
+          if (next12 >= 2 || next12 === 0) {
+            main.push(num);
+          }
+        }
+      }
+    }
+
+    if (main.length < 4) {
+      for (i = 0; i < backup.length && main.length < 4; i++) {
+        num = backup[i];
+        if (main.indexOf(num) === -1) {
           main.push(num);
+          backup.splice(i, 1);
+          i--;
+        }
+      }
+    }
+
+    if (main.length + backup.length < 4) {
+      var chain = config.cycleChain;
+      for (i = 0; i < chain.length; i++) {
+        num = chain[i];
+        if (main.indexOf(num) === -1 && blackList.indexOf(num) === -1 && backup.indexOf(num) === -1) {
+          var next12 = nextFreq12[num] || 0;
+          if (next12 >= 1) {
+            backup.push(num);
+          }
+          if (main.length + backup.length >= 6) break;
         }
       }
     }
 
     return {
       main: main.slice(0, 4),
-      backup: backup,
-      downWeight: blackList
+      backup: backup.slice(0, 2),
+      downWeight: blackList,
+      gradeInfo: { main: main.length, backup: backup.length }
     };
   },
 
@@ -333,38 +412,63 @@ const BusinessUltimate = {
 
   generateStableNumbers: function(history, config) {
     var sortedHistory = history.slice().sort(function(a, b) { return a.issue - b.issue; });
-
     var cycleChain = config.cycleChain;
 
-    var recentV2Numbers = this.getRecentMainNumbers(sortedHistory, config.mainPool, 3);
-
-    var chainIndex = -1;
-    var startNum = null;
-    if (recentV2Numbers.length > 0) {
-      startNum = recentV2Numbers[0];
-      chainIndex = cycleChain.indexOf(startNum);
-    }
-
-    if (chainIndex === -1) {
-      startNum = cycleChain[0];
-      chainIndex = 0;
-    }
+    var recentMainNums = this.getRecentMainNumbers(sortedHistory, config.mainPool, 5);
 
     var candidate = [];
-    for (var i = 0; i < 6; i++) {
-      var idx = (chainIndex + i) % cycleChain.length;
-      candidate.push(cycleChain[idx]);
+
+    if (recentMainNums.length >= 2) {
+      recentMainNums.forEach(function(num) {
+        var idx = cycleChain.indexOf(num);
+        if (idx !== -1) {
+          var nextIdx = (idx + 1) % cycleChain.length;
+          candidate.push(cycleChain[nextIdx]);
+        }
+      });
+    } else if (recentMainNums.length === 1) {
+      var idx = cycleChain.indexOf(recentMainNums[0]);
+      if (idx !== -1) {
+        var nextIdx = (idx + 1) % cycleChain.length;
+        candidate.push(cycleChain[nextIdx]);
+        var nextIdx2 = (nextIdx + 1) % cycleChain.length;
+        candidate.push(cycleChain[nextIdx2]);
+      }
+    }
+
+    if (candidate.length > 0) {
+      var startIdx = cycleChain.indexOf(candidate[0]);
+      if (startIdx !== -1) {
+        for (var i = 1; i <= 2; i++) {
+          var idx = (startIdx + i) % cycleChain.length;
+          if (candidate.indexOf(cycleChain[idx]) === -1) {
+            candidate.push(cycleChain[idx]);
+          }
+        }
+      }
+    }
+
+    if (candidate.length > 0) {
+      candidate = candidate.filter(function(num, index, self) {
+        return self.indexOf(num) === index;
+      });
     }
 
     var filterRes = this.filterByWeight(sortedHistory, candidate, config);
     var result = filterRes.main;
     var backup = filterRes.backup;
 
+    if (result.length < 4 && backup.length > 0) {
+      var toAdd = 4 - result.length;
+      for (var k = 0; k < toAdd && k < backup.length; k++) {
+        result.push(backup[k]);
+      }
+      backup = backup.slice(toAdd);
+    }
+
     return {
-      mainNumbers: result,
+      mainNumbers: result.slice(0, 4),
       alternativeNumbers: backup,
-      hotNumbers: [startNum],
-      warmNumbers: result.slice(1),
       configUsed: config.name,
       downWeightList: filterRes.downWeight
     };
@@ -376,15 +480,45 @@ const BusinessUltimate = {
     var oldPoolNumbers = this.getRecentMainNumbers(sortedHistory, this.CYCLE_CONFIG.V1.mainPool, 3);
     var newPoolNumbers = this.getRecentMainNumbers(sortedHistory, this.CYCLE_CONFIG.V2.mainPool, 3);
 
+    var candidate = [];
+
     var oldHot = oldPoolNumbers[0] || this.CYCLE_CONFIG.V1.mainPool[0];
     var newHot = newPoolNumbers[0] || this.CYCLE_CONFIG.V2.mainPool[0];
 
-    var candidate = [oldHot, newHot];
+    if (oldPoolNumbers.length > 0) {
+      var idx = this.CYCLE_CONFIG.V1.cycleChain.indexOf(oldPoolNumbers[0]);
+      if (idx !== -1) {
+        var nextIdx = (idx + 1) % this.CYCLE_CONFIG.V1.cycleChain.length;
+        candidate.push(this.CYCLE_CONFIG.V1.cycleChain[nextIdx]);
+      }
+    }
+
+    if (newPoolNumbers.length > 0) {
+      var idx = this.CYCLE_CONFIG.V2.cycleChain.indexOf(newPoolNumbers[0]);
+      if (idx !== -1) {
+        var nextIdx = (idx + 1) % this.CYCLE_CONFIG.V2.cycleChain.length;
+        candidate.push(this.CYCLE_CONFIG.V2.cycleChain[nextIdx]);
+      }
+    }
+
+    if (candidate.length > 0) {
+      candidate = candidate.filter(function(num, index, self) {
+        return self.indexOf(num) === index;
+      });
+    }
+
+    if (candidate.length < 2) {
+      var allChains = this.CYCLE_CONFIG.V1.cycleChain.concat(this.CYCLE_CONFIG.V2.cycleChain);
+      for (var i = 0; i < allChains.length && candidate.length < 2; i++) {
+        if (candidate.indexOf(allChains[i]) === -1) {
+          candidate.push(allChains[i]);
+        }
+      }
+    }
+
     var filterRes = this.filterByWeight(sortedHistory, candidate, this.CYCLE_CONFIG.V2);
 
-    var validNums = filterRes.main.filter(function(n) { return candidate.indexOf(n) !== -1; });
-
-    if (validNums.length === 0) {
+    if (filterRes.main.length === 0) {
       return {
         transitionNumbers: [],
         note: '过渡期仅推荐非降权2码',
@@ -393,7 +527,7 @@ const BusinessUltimate = {
     }
 
     return {
-      transitionNumbers: validNums.sort(function(a, b) { return a - b; }),
+      transitionNumbers: filterRes.main.sort(function(a, b) { return a - b; }),
       oldPoolHot: oldHot,
       newPoolHot: newHot,
       note: '过渡期仅推荐非降权2码',
@@ -538,10 +672,10 @@ const BusinessUltimate = {
     var self = this;
 
     for (var i = 0; i < maxBacktest; i++) {
-      var futureHistory = historyData.slice(0, historyData.length - i);
-      if (futureHistory.length < 20) break;
+      var predictHistory = historyData.slice(0, historyData.length - i - 1);
+      if (predictHistory.length < 20) break;
 
-      var report = this.generateFullReport(futureHistory);
+      var report = this.generateFullReport(predictHistory);
 
       if (!report || !report.numbers) continue;
 
@@ -550,6 +684,7 @@ const BusinessUltimate = {
 
       var predictedNums = report.numbers.mainNumbers || report.numbers.transitionNumbers || [];
       var actualNum = targetItem.number;
+      var predictIssue = targetItem.issue;
 
       var hitRank = 0;
       for (var j = 0; j < predictedNums.length; j++) {
@@ -560,7 +695,7 @@ const BusinessUltimate = {
       }
 
       records.push({
-        expect: targetItem.issue,
+        expect: predictIssue,
         topN: predictedNums.map(function(n) { return self._getZodiacByNum(n); }),
         actualZodiac: this._getZodiacByNum(actualNum),
         hit: hitRank > 0,
@@ -569,7 +704,7 @@ const BusinessUltimate = {
       });
 
       if (targetItem.issue >= 2026130) {
-        console.log('[回测分析] ' + targetItem.issue + '期: 预测=' + predictedNums.map(function(n) { return self._getZodiacByNum(n); }).join(',') + ', 实际=' + this._getZodiacByNum(actualNum) + ', stage=' + report.currentStage);
+        console.log('[回测分析] ' + predictIssue + '期预测, 用历史数据' + predictHistory.length + '期, 实际=' + this._getZodiacByNum(actualNum) + ', stage=' + report.currentStage);
       }
     }
 
