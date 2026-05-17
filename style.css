@@ -122,6 +122,95 @@
     background: var(--card);
     border-color: var(--border);
   }
+  /* DB算法面板暗色适配 */
+  .db-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .db-result-container {
+    background: linear-gradient(135deg, rgba(0,122,255,0.12), rgba(175,82,222,0.12));
+  }
+  .db-card-item.card-rank-1 {
+    background: linear-gradient(145deg, #4A4000, #3A3000);
+  }
+  .db-card-item.card-rank-2 {
+    background: linear-gradient(145deg, #505050, #404040);
+  }
+  .db-card-item.card-rank-3 {
+    background: linear-gradient(145deg, #4A4030, #3A3020);
+  }
+  .db-card-item.card-rank-other {
+    background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  }
+  .db-card-item.card-rank-1 .db-rank-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #FFE066;
+  }
+  .db-card-item.card-rank-2 .db-rank-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #D0D0D0;
+  }
+  .db-card-item.card-rank-3 .db-rank-badge {
+    background: rgba(255, 255, 255, 0.15);
+    color: #E8A962;
+  }
+  .db-card-item.card-rank-other .db-rank-badge {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .db-card-item .db-card-name {
+    color: var(--text);
+  }
+  .db-number-circle {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .db-main-section .db-number-circle {
+    background: linear-gradient(135deg, #0A84FF, #5856D6);
+  }
+  .db-backup-section .db-number-circle {
+    background: linear-gradient(135deg, rgba(10,132,255,0.25), rgba(88,86,214,0.25));
+    border: 2px solid rgba(0,122,255,0.3);
+    color: #0A84FF;
+  }
+  .db-number-score {
+    color: var(--sub-text);
+  }
+  .db-divider {
+    background: rgba(255,255,255,0.08);
+  }
+  .db-detail-toggle:active {
+    background: rgba(255,255,255,0.08);
+  }
+  .db-heat-panel {
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .db-heat-item {
+    background: rgba(0,0,0,0.2);
+  }
+  .db-hit-rate {
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .db-miss-container {
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .db-miss-item {
+    background: rgba(0,0,0,0.2);
+  }
+  .db-rules {
+    background: rgba(0,0,0,0.15);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .db-rule-item {
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .db-rule-item:last-child {
+    margin-bottom: 0;
+  }
 }
 
 /* 全局重置与基础样式 */
