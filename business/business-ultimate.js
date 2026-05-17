@@ -49,6 +49,96 @@ const BusinessUltimate = {
     });
   },
 
+  ADAPTIVE_CONFIG: {
+    BASE_MAIN_COUNT: 4,
+    BASE_BACKUP_COUNT: 3,
+    TRACK_WINDOW: 8,
+    MAX_MAIN: 4,
+    MIN_MAIN: 4,
+    MAX_BACKUP: 3,
+    MIN_BACKUP: 2
+  },
+
+  getAdaptiveState: function() {
+    return Storage.get('ultimateAdaptive', {
+      recentResults: [],
+      consecutiveMiss: 0,
+      consecutiveHit: 0,
+      currentMainCount: this.ADAPTIVE_CONFIG.BASE_MAIN_COUNT,
+      currentBackupCount: this.ADAPTIVE_CONFIG.BASE_BACKUP_COUNT
+    });
+  },
+
+  saveAdaptiveState: function(state) {
+    Storage.set('ultimateAdaptive', state);
+  },
+
+  updateAdaptiveState: function(isHit) {
+    var state = this.getAdaptiveState();
+    var trackWindow = this.ADAPTIVE_CONFIG.TRACK_WINDOW;
+
+    state.recentResults.push(isHit ? 1 : 0);
+    if (state.recentResults.length > trackWindow) {
+      state.recentResults.shift();
+    }
+
+    if (isHit) {
+      state.consecutiveMiss = 0;
+      state.consecutiveHit++;
+    } else {
+      state.consecutiveHit = 0;
+      state.consecutiveMiss++;
+    }
+
+    var recentHits = state.recentResults.filter(function(r) { return r === 1; }).length;
+    var hitRate = state.recentResults.length > 0 ? (recentHits / state.recentResults.length) : 0;
+
+    var mainAdjust = 0;
+    var backupAdjust = 0;
+
+    if (state.consecutiveMiss >= 4) {
+      mainAdjust = 2;
+      backupAdjust = 2;
+    } else if (state.consecutiveMiss >= 3) {
+      mainAdjust = 1;
+      backupAdjust = 1;
+    } else if (state.consecutiveMiss >= 2) {
+      mainAdjust = 1;
+      backupAdjust = 0;
+    } else if (hitRate <= 0.25 && state.recentResults.length >= 5) {
+      mainAdjust = 1;
+      backupAdjust = 1;
+    } else if (hitRate <= 0.375 && state.recentResults.length >= 6) {
+      mainAdjust = 0;
+      backupAdjust = 1;
+    } else if (state.consecutiveHit >= 3) {
+      mainAdjust = -1;
+      backupAdjust = -1;
+    } else if (state.consecutiveHit >= 5) {
+      mainAdjust = -1;
+      backupAdjust = -1;
+    } else if (hitRate >= 0.75 && state.recentResults.length >= 6) {
+      mainAdjust = -1;
+      backupAdjust = 0;
+    }
+
+    var baseMain = this.ADAPTIVE_CONFIG.BASE_MAIN_COUNT;
+    var baseBackup = this.ADAPTIVE_CONFIG.BASE_BACKUP_COUNT;
+
+    state.currentMainCount = Math.max(this.ADAPTIVE_CONFIG.MIN_MAIN, Math.min(this.ADAPTIVE_CONFIG.MAX_MAIN, baseMain + mainAdjust));
+    state.currentBackupCount = Math.max(this.ADAPTIVE_CONFIG.MIN_BACKUP, Math.min(this.ADAPTIVE_CONFIG.MAX_BACKUP, baseBackup + backupAdjust));
+
+    this.saveAdaptiveState(state);
+
+    console.log('');
+    console.log('【自适应调整】');
+    console.log('近期命中率: ' + Math.round(hitRate * 100) + '% (' + recentHits + '/' + state.recentResults.length + ')');
+    console.log('连亏/连胜: ' + state.consecutiveMiss + '/' + state.consecutiveHit);
+    console.log('推荐数量: 主推' + state.currentMainCount + '个 + 备选' + state.currentBackupCount + '个');
+
+    return state;
+  },
+
   _getZodiacByNum: function(num) {
     return this.NUM_TO_ZODIAC[num] || '';
   },
@@ -89,13 +179,18 @@ const BusinessUltimate = {
       .reverse();
   },
 
-  WINDOW_SIZE: 11,
+  WINDOW_SIZE: 12,
   AUX_WINDOW_SIZE: 24,
-  DOWN_WEIGHT_LIMIT: 3,
-  COOLING_PERIOD: 2,
+  DOWN_WEIGHT_THRESHOLD: 3,
+  RELEASE_WINDOW: 11,
+  RELEASE_THRESHOLD: 2,
 
   getCurrent12Freq: function(history) {
     return this.countFrequency(history, this.WINDOW_SIZE);
+  },
+
+  getCurrent11Freq: function(history) {
+    return this.countFrequency(history, this.RELEASE_WINDOW);
   },
 
   getCurrent24Freq: function(history) {
@@ -157,41 +252,28 @@ const BusinessUltimate = {
   },
 
   getDownWeightBlackList: function(history) {
-    var sortedHistory = history.slice().sort(function(a, b) { return a.issue - b.issue; });
     var currFreq12 = this.getCurrent12Freq(history);
-    var nextFreq12 = this.getNext12Freq(history);
-    var currFreq24 = this.getCurrent24Freq(history);
-    var cooling = this.getCoolingInfo();
+    var currFreq11 = this.getCurrent11Freq(history);
     var blackList = [];
-    var preReleaseList = [];
 
     for (var num = 1; num <= 12; num++) {
-      var curr12 = currFreq12[num] || 0;
-      var next12 = nextFreq12[num] || 0;
-      var curr24 = currFreq24[num] || 0;
+      var freq12 = currFreq12[num] || 0;
+      var freq11 = currFreq11[num] || 0;
 
-      if (curr12 >= this.DOWN_WEIGHT_LIMIT) {
-        if (next12 >= 3) {
-          blackList.push(num);
-        } else if (curr12 >= 4) {
-          blackList.push(num);
-        } else if (next12 <= 1) {
-          preReleaseList.push(num);
+      if (freq12 >= this.DOWN_WEIGHT_THRESHOLD) {
+        if (freq11 <= this.RELEASE_THRESHOLD) {
+          console.log('✅ 号码' + num + '解除降权 (11期=' + freq11 + '次≤' + this.RELEASE_THRESHOLD + ')');
         } else {
-          preReleaseList.push(num);
+          blackList.push(num);
+          console.log('⬇️ 号码' + num + '降权 (12期=' + freq12 + '次≥' + this.DOWN_WEIGHT_THRESHOLD + ', 11期=' + freq11 + '次)');
         }
       }
     }
 
-    for (var i = 0; i < preReleaseList.length; i++) {
-      var num = preReleaseList[i];
-      if (cooling[num] && cooling[num].coolingCount >= this.COOLING_PERIOD) {
-      } else if (!cooling[num] || cooling[num].coolingCount < this.COOLING_PERIOD) {
-        blackList.push(num);
-      }
-    }
-
-    this.updateCoolingInfo(history, blackList);
+    console.log('');
+    console.log('【降权分析】');
+    console.log('规则: 12期≥' + this.DOWN_WEIGHT_THRESHOLD + '次降权, 11期≤' + this.RELEASE_THRESHOLD + '次解除');
+    console.log('黑名单数量: ' + blackList.length + '个 [' + (blackList.length > 0 ? blackList.join(',') : '无') + ']');
 
     return blackList;
   },
@@ -220,6 +302,10 @@ const BusinessUltimate = {
     var currFreq12 = this.getCurrent12Freq(history);
     var nextFreq12 = this.getNext12Freq(history);
 
+    var adaptiveState = this.getAdaptiveState();
+    var targetMain = adaptiveState.currentMainCount || this.ADAPTIVE_CONFIG.BASE_MAIN_COUNT;
+    var targetBackup = adaptiveState.currentBackupCount || this.ADAPTIVE_CONFIG.BASE_BACKUP_COUNT;
+
     var main = [];
     var backup = [];
     var silent = [];
@@ -232,30 +318,30 @@ const BusinessUltimate = {
       }
 
       var next12 = nextFreq12[num] || 0;
-      if (next12 >= 2) {
+      if (next12 >= 1) {
         main.push(num);
-      } else if (next12 === 1) {
-        backup.push(num);
+      } else if (next12 === 0 && currFreq12[num] <= 1) {
+        main.push(num);
       } else {
-        main.push(num);
+        backup.push(num);
       }
     }
 
-    if (main.length < 4) {
+    if (main.length < targetMain) {
       var chain = config.cycleChain;
-      for (i = 0; i < chain.length && main.length < 4; i++) {
+      for (i = 0; i < chain.length && main.length < targetMain; i++) {
         num = chain[i];
         if (main.indexOf(num) === -1 && blackList.indexOf(num) === -1 && backup.indexOf(num) === -1) {
           var next12 = nextFreq12[num] || 0;
-          if (next12 >= 2 || next12 === 0) {
+          if (next12 >= 1 || next12 === 0) {
             main.push(num);
           }
         }
       }
     }
 
-    if (main.length < 4) {
-      for (i = 0; i < backup.length && main.length < 4; i++) {
+    if (main.length < targetMain) {
+      for (i = 0; i < backup.length && main.length < targetMain; i++) {
         num = backup[i];
         if (main.indexOf(num) === -1) {
           main.push(num);
@@ -265,24 +351,32 @@ const BusinessUltimate = {
       }
     }
 
-    if (main.length + backup.length < 4) {
+    if (main.length > targetMain) {
+      var extraMains = main.splice(targetMain);
+      backup = extraMains.concat(backup);
+    }
+
+    var totalTarget = targetMain + targetBackup;
+    if (main.length + backup.length < totalTarget) {
       var chain = config.cycleChain;
       for (i = 0; i < chain.length; i++) {
         num = chain[i];
         if (main.indexOf(num) === -1 && blackList.indexOf(num) === -1 && backup.indexOf(num) === -1) {
-          var next12 = nextFreq12[num] || 0;
-          if (next12 >= 1) {
-            backup.push(num);
-          }
-          if (main.length + backup.length >= 6) break;
+          backup.push(num);
         }
+        if (main.length + backup.length >= totalTarget + 2) break;
       }
     }
 
     return {
-      main: main.slice(0, 4),
-      backup: backup.slice(0, 2),
+      main: main,
+      backup: backup.slice(0, targetBackup),
       downWeight: blackList,
+      adaptiveInfo: {
+        mainCount: targetMain,
+        backupCount: targetBackup,
+        isAdaptive: true
+      },
       gradeInfo: { main: main.length, backup: backup.length }
     };
   },
@@ -470,16 +564,24 @@ const BusinessUltimate = {
 
     if (crossPoolCandidate.length > 0) {
       crossPoolCandidate = crossPoolCandidate.filter(function(num) {
-        return result.indexOf(num) === -1 && 
-               backup.indexOf(num) === -1 && 
+        return result.indexOf(num) === -1 &&
+               backup.indexOf(num) === -1 &&
                filterRes.downWeight.indexOf(num) === -1;
       });
-      backup = backup.concat(crossPoolCandidate.slice(0, 2));
+      var adaptiveState = this.getAdaptiveState();
+      var extraCount = (adaptiveState.currentBackupCount || this.ADAPTIVE_CONFIG.BASE_BACKUP_COUNT) - backup.length;
+      if (extraCount > 0) {
+        backup = backup.concat(crossPoolCandidate.slice(0, extraCount));
+      }
     }
 
+    var adaptiveState = this.getAdaptiveState();
+    var mainCount = adaptiveState.currentMainCount || this.ADAPTIVE_CONFIG.BASE_MAIN_COUNT;
+    var backupCount = adaptiveState.currentBackupCount || this.ADAPTIVE_CONFIG.BASE_BACKUP_COUNT;
+
     return {
-      mainNumbers: result.slice(0, 4),
-      alternativeNumbers: backup.slice(0, 2),
+      mainNumbers: result.slice(0, mainCount),
+      alternativeNumbers: backup.slice(0, backupCount),
       configUsed: config.name,
       downWeightList: filterRes.downWeight
     };
@@ -531,17 +633,23 @@ const BusinessUltimate = {
 
     if (filterRes.main.length === 0) {
       return {
-        transitionNumbers: [],
-        note: '过渡期仅推荐非降权2码',
+        mainNumbers: [],
+        alternativeNumbers: [],
+        note: '过渡期仅推荐非降权号码',
         downWeightList: filterRes.downWeight
       };
     }
 
+    var adaptiveState = this.getAdaptiveState();
+    var mainCount = adaptiveState.currentMainCount || this.ADAPTIVE_CONFIG.BASE_MAIN_COUNT;
+    var backupCount = adaptiveState.currentBackupCount || this.ADAPTIVE_CONFIG.BASE_BACKUP_COUNT;
+
     return {
-      transitionNumbers: filterRes.main.sort(function(a, b) { return a - b; }),
+      mainNumbers: filterRes.main.sort(function(a, b) { return a - b; }).slice(0, mainCount),
+      alternativeNumbers: filterRes.backup.slice(0, backupCount),
       oldPoolHot: oldHot,
       newPoolHot: newHot,
-      note: '过渡期仅推荐非降权2码',
+      note: '过渡期推荐非降权号码',
       downWeightList: filterRes.downWeight
     };
   },
@@ -678,12 +786,21 @@ const BusinessUltimate = {
   runBacktest: function(historyData) {
     if (!historyData || historyData.length < 25) return null;
 
+    Storage.set('ultimateAdaptive', {
+      recentResults: [],
+      consecutiveMiss: 0,
+      consecutiveHit: 0,
+      currentMainCount: this.ADAPTIVE_CONFIG.BASE_MAIN_COUNT,
+      currentBackupCount: this.ADAPTIVE_CONFIG.BASE_BACKUP_COUNT
+    });
+
     var records = [];
     var maxBacktest = Math.min(40, historyData.length - 15);
     var self = this;
 
     console.log('═══════════════════════════════════════');
     console.log('[回测开始] 总数据量: ' + historyData.length + '期, 最大回测: ' + maxBacktest + '期');
+    console.log('[自适应] 状态已重置，从基准值开始追踪');
     console.log('═══════════════════════════════════════');
 
     for (var i = 0; i < maxBacktest; i++) {
@@ -698,6 +815,7 @@ const BusinessUltimate = {
       if (!targetItem) continue;
 
       var predictedNums = report.numbers.mainNumbers || report.numbers.transitionNumbers || [];
+      var backupNums = report.numbers.alternativeNumbers || [];
       var actualNum = targetItem.number;
       var predictIssue = targetItem.issue;
       var blackList = report.numbers.downWeightList || [];
@@ -710,19 +828,41 @@ const BusinessUltimate = {
         }
       }
 
+      var backupHitRank = 0;
+      if (hitRank === 0 && backupNums.length > 0) {
+        for (var k = 0; k < backupNums.length; k++) {
+          if (backupNums[k] === actualNum) {
+            backupHitRank = k + 1;
+            break;
+          }
+        }
+      }
+
+      var totalHitRank = hitRank > 0 ? hitRank : (backupHitRank > 0 ? predictedNums.length + backupHitRank : 0);
+
       var actualInBlackList = (blackList.indexOf(actualNum) !== -1);
       var actualZodiac = this._getZodiacByNum(actualNum);
 
       records.push({
         expect: predictIssue,
         topN: predictedNums.map(function(n) { return self._getZodiacByNum(n); }),
+        backupTopN: backupNums.map(function(n) { return self._getZodiacByNum(n); }),
         actualZodiac: actualZodiac,
         hit: hitRank > 0,
         hitRank: hitRank,
+        backupHit: backupHitRank > 0,
+        backupHitRank: backupHitRank,
+        totalHit: totalHitRank > 0,
+        totalHitRank: totalHitRank,
         stage: report.currentStage,
         blackListCount: blackList.length,
         actualInBlackList: actualInBlackList
       });
+
+      var adaptiveUpdate = this.updateAdaptiveState(totalHitRank > 0);
+      if (i >= maxBacktest - 5) {
+        console.log('│ 自适应状态: 主推' + adaptiveUpdate.currentMainCount + '个 + 备选' + adaptiveUpdate.currentBackupCount + '个');
+      }
 
       console.log('');
       console.log('┌──────────────────────────────────────────────┐');
@@ -731,13 +871,22 @@ const BusinessUltimate = {
       console.log('│ 周期阶段: ' + report.currentStage);
       console.log('│ 使用历史: ' + predictHistory.length + '期');
       console.log('│ 推荐号码: [' + predictedNums.join(',') + '] → [' + predictedNums.map(function(n) { return self._getZodiacByNum(n); }).join(', ') + ']');
+      if (backupNums.length > 0) {
+        console.log('│ 备选号码: [' + backupNums.join(',') + '] → [' + backupNums.map(function(n) { return self._getZodiacByNum(n); }).join(', ') + ']');
+      }
       console.log('│ 实际开奖: ' + actualNum + '(' + actualZodiac + ')');
       console.log('│ 降权黑名单: [' + blackList.join(',') + '] (' + blackList.length + '个)');
-      console.log('│ 命中结果: ' + (hitRank > 0 ? '✅ 第' + hitRank + '名' : '❌ 未命中'));
-      if (!hitRank && actualInBlackList) {
-        console.log('│ ⚠️ 未命中原因: 实际号码在降权黑名单中!');
-      } else if (!hitRank && !actualInBlackList) {
-        console.log('│ ⚠️ 未命中原因: 实际号码不在推荐列表中');
+      if (hitRank > 0) {
+        console.log('│ 命中结果: ✅ 主推第' + hitRank + '名');
+      } else if (backupHitRank > 0) {
+        console.log('│ 命中结果: ✅ 备选第' + backupHitRank + '名 (总第' + totalHitRank + '名)');
+      } else {
+        console.log('│ 命中结果: ❌ 未命中');
+        if (actualInBlackList) {
+          console.log('│ ⚠️ 未命中原因: 实际号码在降权黑名单中!');
+        } else {
+          console.log('│ ⚠️ 未命中原因: 实际号码不在推荐列表中(主推+备选均未包含)');
+        }
       }
       console.log('└──────────────────────────────────────────────┘');
     }
@@ -750,16 +899,51 @@ const BusinessUltimate = {
     var top3Hits = 0;
     var missInBlackList = 0;
     var missNotInRecommend = 0;
-    
+
+    var backupHits = 0;
+    var backupTop1Hits = 0;
+    var backupTop2Hits = 0;
+    var totalHits = 0;
+    var totalTop1Hits = 0;
+    var totalTop2Hits = 0;
+    var totalTop3Hits = 0;
+    var missTotalNotInRecommend = 0;
+
     records.forEach(function(r) {
       if (r.hit) {
         hits++;
         if (r.hitRank === 1) top1Hits++;
         if (r.hitRank <= 2) top2Hits++;
         if (r.hitRank <= 3) top3Hits++;
-      } else {
-        if (r.actualInBlackList) missInBlackList++;
-        else missNotInRecommend++;
+      }
+
+      if (r.backupHit) {
+        backupHits++;
+        if (r.backupHitRank === 1) backupTop1Hits++;
+        if (r.backupHitRank <= 2) backupTop2Hits++;
+      }
+
+      if (r.totalHit) {
+        totalHits++;
+        if (r.totalHitRank === 1) totalTop1Hits++;
+        if (r.totalHitRank <= 2) totalTop2Hits++;
+        if (r.totalHitRank <= 3) totalTop3Hits++;
+      }
+
+      if (!r.totalHit) {
+        if (r.actualInBlackList) {
+          missInBlackList++;
+        } else {
+          missTotalNotInRecommend++;
+        }
+      }
+
+      if (!r.hit) {
+        if (r.actualInBlackList) {
+          missInBlackList++;
+        } else {
+          missNotInRecommend++;
+        }
       }
     });
 
@@ -770,8 +954,18 @@ const BusinessUltimate = {
       top1Hits: top1Hits,
       top2Hits: top2Hits,
       top3Hits: top3Hits,
+      backupHits: backupHits,
+      backupHitRate: Math.round((backupHits / records.length) * 100),
+      backupTop1Hits: backupTop1Hits,
+      backupTop2Hits: backupTop2Hits,
+      totalHits: totalHits,
+      totalHitRate: Math.round((totalHits / records.length) * 100),
+      totalTop1Hits: totalTop1Hits,
+      totalTop2Hits: totalTop2Hits,
+      totalTop3Hits: totalTop3Hits,
       missInBlackList: missInBlackList,
       missNotInRecommend: missNotInRecommend,
+      missTotalNotInRecommend: missTotalNotInRecommend,
       records: records
     };
 
@@ -780,15 +974,40 @@ const BusinessUltimate = {
     console.log('[回测汇总]');
     console.log('═══════════════════════════════════════');
     console.log('总测试: ' + summary.total + '期');
-    console.log('命中次数: ' + summary.hits + '次');
-    console.log('命中率: ' + summary.hitRate + '%');
-    console.log('🥇第1名: ' + summary.top1Hits + '次 (' + Math.round(summary.top1Hits / summary.total * 100) + '%)');
-    console.log('🥈前2名: ' + summary.top2Hits + '次 (' + Math.round(summary.top2Hits / summary.total * 100) + '%)');
-    console.log('🥉前3名: ' + summary.top3Hits + '次 (' + Math.round(summary.top3Hits / summary.total * 100) + '%)');
     console.log('');
-    console.log('未命中分析:');
-    console.log('  因降权错失: ' + summary.missInBlackList + '次 (' + Math.round(summary.missInBlackList / (summary.total - summary.hits) * 100) + '%)');
-    console.log('  未推荐到: ' + summary.missNotInRecommend + '次 (' + Math.round(summary.missNotInRecommend / (summary.total - summary.hits) * 100) + '%)');
+    console.log('【主推4码】');
+    console.log('  命中次数: ' + summary.hits + '次');
+    console.log('  命中率: ' + summary.hitRate + '%');
+    console.log('  🥇第1名: ' + summary.top1Hits + '次 (' + Math.round(summary.top1Hits / summary.total * 100) + '%)');
+    console.log('  🥈前2名: ' + summary.top2Hits + '次 (' + Math.round(summary.top2Hits / summary.total * 100) + '%)');
+    console.log('  🥉前3名: ' + summary.top3Hits + '次 (' + Math.round(summary.top3Hits / summary.total * 100) + '%)');
+    console.log('');
+    console.log('【备选区】(仅统计主推未命中时的补救)');
+    console.log('  备选命中: ' + summary.backupHits + '次');
+    console.log('  备选命中率: ' + summary.backupHitRate + '%');
+    console.log('  备选第1名: ' + summary.backupTop1Hits + '次');
+    console.log('');
+    console.log('【总计】(主推+备选)');
+    console.log('  总命中: ' + summary.totalHits + '次');
+    console.log('  总命中率: ' + summary.totalHitRate + '%');
+    console.log('  总第1名: ' + summary.totalTop1Hits + '次 (' + Math.round(summary.totalTop1Hits / summary.total * 100) + '%)');
+    console.log('  总前2名: ' + summary.totalTop2Hits + '次 (' + Math.round(summary.totalTop2Hits / summary.total * 100) + '%)');
+    console.log('  总前3名: ' + summary.totalTop3Hits + '次 (' + Math.round(summary.totalTop3Hits / summary.total * 100) + '%)');
+    console.log('');
+    console.log('【未命中分析】(基于主推+备选总计)');
+    var totalMiss = summary.total - summary.totalHits;
+    if (totalMiss > 0) {
+      console.log('  因降权错失: ' + summary.missInBlackList + '次 (' + Math.round(summary.missInBlackList / totalMiss * 100) + '%)');
+      console.log('  完全未推荐到: ' + summary.missTotalNotInRecommend + '次 (' + Math.round(summary.missTotalNotInRecommend / totalMiss * 100) + '%)');
+    } else {
+      console.log('  ✅ 全部命中！');
+    }
+
+    var finalAdaptive = this.getAdaptiveState();
+    console.log('');
+    console.log('[自适应最终状态]');
+    console.log('  最终推荐数量: 主推' + finalAdaptive.currentMainCount + '个 + 备选' + finalAdaptive.currentBackupCount + '个');
+    console.log('  近期命中率: ' + (finalAdaptive.recentResults.length > 0 ? Math.round(finalAdaptive.recentResults.filter(function(r) { return r === 1; }).length / finalAdaptive.recentResults.length * 100) : 0) + '%');
     console.log('═══════════════════════════════════════');
 
     Storage.set(this.BACKTEST_KEY, summary);

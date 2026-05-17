@@ -293,7 +293,7 @@ const Business = {
       Business.initAnalysisPage();
     }
     if(index === 2) {
-      Business.initZodiacPrediction();
+      Business.switchZodiacTab('ultimate');
     }
   },
 
@@ -1359,14 +1359,16 @@ const Business = {
       report: report,
       nextExpect: nextExpect,
       numbers: BusinessUltimate.formatNumbersToDisplay(numbers),
-      alternative: report.numbers ? BusinessUltimate.formatNumbersToDisplay(report.numbers.alternativeNumbers || []) : []
+      alternative: report.numbers ? BusinessUltimate.formatNumbersToDisplay(report.numbers.alternativeNumbers || []) : [],
+      adaptiveInfo: BusinessUltimate.getAdaptiveState()
     });
 
     if (ultimateHistory.length >= 25) {
       ViewZodiacPrediction.renderUltimateBacktestEmpty();
+      var currentBackupCount = (report.numbers && report.numbers.alternativeNumbers) ? report.numbers.alternativeNumbers.length : (BusinessUltimate.getAdaptiveState().currentBackupCount || 3);
       setTimeout(function() {
         var btSummary = BusinessUltimate.runBacktest(ultimateHistory);
-        if (btSummary) ViewZodiacPrediction.renderUltimateBacktest(btSummary);
+        if (btSummary) ViewZodiacPrediction.renderUltimateBacktest(btSummary, currentBackupCount);
       }, 100);
     } else {
       ViewZodiacPrediction.renderUltimateBacktestEmpty();

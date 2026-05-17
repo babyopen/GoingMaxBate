@@ -578,10 +578,10 @@
   <!-- 资料页面 -->
   <div class="page" id="randomPage" style="display:none">
     <div class="zodiac-tab-bar">
-      <button class="zodiac-tab-btn active" data-zodiac-tab="predict">生肖预测</button>
+      <button class="zodiac-tab-btn active" data-zodiac-tab="ultimate">终极算法</button>
+      <button class="zodiac-tab-btn" data-zodiac-tab="predict">生肖预测</button>
       <button class="zodiac-tab-btn" data-zodiac-tab="giong">Giong</button>
       <button class="zodiac-tab-btn" data-zodiac-tab="db">DB算法</button>
-      <button class="zodiac-tab-btn" data-zodiac-tab="ultimate">终极算法</button>
     </div>
 
     <!-- 生肖预测面板 -->
@@ -741,20 +741,10 @@
       <div class="card">
         <div class="card-header">
           <h2>终极算法预测</h2>
+          <div id="ultimateExpectDisplay" class="ultimate-expect-display"></div>
         </div>
         <div class="card-body">
           <div id="ultimateResultContainer">
-            <div class="empty-tip">加载中…</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <h2>综合推荐</h2>
-        </div>
-        <div class="card-body">
-          <div id="ultimateRecommendPanel">
             <div class="empty-tip">加载中…</div>
           </div>
         </div>

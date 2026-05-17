@@ -689,7 +689,7 @@ const ZodiacPrediction = {
   analyzeZonePatterns: function(historyData) {
     if (!historyData || historyData.length < 25) return null;
 
-    var windows = [12, 24];
+    var windows = [12, 24, 36];
     var result = {};
 
     windows.forEach(function(w) {

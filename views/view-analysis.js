@@ -6,16 +6,6 @@
  * 红线：不反向调用 business/、不调用 StateManager 写操作
  */
 const ViewAnalysis = {
-  /**
-   * 构建号码球HTML字符串
-   * @param {string} num - 号码
-   * @param {string} color - 颜色(red/blue/green)
-   * @param {string} zodiac - 生肖
-   * @returns {string} HTML
-   */
-  buildBall: (num, color, zodiac) => {
-    return '<div class="ball-item"><div class="ball ' + color + '">' + num + '</div><div class="ball-zodiac">' + zodiac + '</div></div>';
-  },
 
   /**
    * 渲染最新开奖（接收预处理的显示数据）

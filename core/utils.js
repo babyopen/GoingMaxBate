@@ -110,18 +110,5 @@ const Utils = {
     if(te <= 29) return '20-29';
     if(te <= 39) return '30-39';
     return '40-49';
-  },
-
-  getTailCategory: (t) => t,
-
-  filterByYear: (historyData, year) => {
-    return historyData.filter(item => {
-      const expect = item.expect || '';
-      return String(expect).startsWith(String(year));
-    });
-  },
-
-  getHotEntries: (obj, limit) => {
-    return Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, limit);
   }
 };

@@ -154,6 +154,32 @@ const EventBinder = {
       if(action === 'loadMoreHistory') Business.loadMoreHistory();
       if(action === 'toggleExcludeLock') Business.toggleExcludeLock();
       if(action === 'toggleDBDetail') ViewZodiacPrediction.toggleDBDetail();
+      if(action === 'showBacktestDetail') {
+        var modal = document.getElementById('backtestDetailModal');
+        if (modal) modal.style.display = 'flex';
+      }
+      if(action === 'closeBacktestDetail') {
+        var modal = document.getElementById('backtestDetailModal');
+        if (modal) modal.style.display = 'none';
+      }
+      if(action === 'switchFreqCard') {
+        var freqIndex = Number(actionBtn.dataset.freqIndex);
+        if (ViewZodiacPrediction.freqSwiperUpdate) {
+          ViewZodiacPrediction.freqSwiperUpdate(freqIndex);
+        }
+      }
+      if(action === 'switchPredCard') {
+        var predIndex = Number(actionBtn.dataset.predIndex);
+        if (ViewZodiacPrediction.predSwiperUpdate) {
+          ViewZodiacPrediction.predSwiperUpdate(predIndex);
+        }
+      }
+      if(action === 'switchZoneAnalysis') {
+        var zoneIndex = Number(actionBtn.dataset.zoneIndex);
+        if (ViewZodiacPrediction.zoneSwiperUpdate) {
+          ViewZodiacPrediction.zoneSwiperUpdate(zoneIndex);
+        }
+      }
       return;
     }
 
