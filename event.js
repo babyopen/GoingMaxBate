@@ -5,6 +5,8 @@ const EventBinder = {
   init: () => {
     // 全局点击事件委托
     document.addEventListener('click', EventBinder.handleGlobalClick);
+    // 全局双击事件委托（标签锁定/解锁）
+    document.addEventListener('dblclick', EventBinder.handleDoubleClick);
     // 键盘回车/空格事件（无障碍支持）
     document.addEventListener('keydown', EventBinder.handleKeyDown);
     // 滚动事件（已节流）
@@ -66,6 +68,21 @@ const EventBinder = {
           Business.renderZodiacAnalysis();
         }
       });
+    }
+  },
+
+  /**
+   * 全局双击处理（标签锁定/解锁）
+   * @param {MouseEvent} e - 双击事件
+   */
+  handleDoubleClick: (e) => {
+    const target = e.target;
+    const tag = target.closest('.tag[data-group]');
+
+    if (tag) {
+      const group = tag.dataset.group;
+      const value = Utils.formatTagValue(tag.dataset.value, group);
+      StateManager.toggleTagLock(group, value);
     }
   },
 

@@ -167,6 +167,40 @@ const StateManager = {
   },
 
   /**
+   * 切换单个标签的锁定状态
+   * @param {string} group - 分组名
+   * @param {string} value - 标签值
+   */
+  toggleTagLock: (group, value) => {
+    const state = StateManager._state;
+    const newLocked = { ...state.locked };
+    const currentLocked = newLocked[group] || [];
+    const index = currentLocked.indexOf(value);
+
+    if (index > -1) {
+      currentLocked.splice(index, 1);
+      if (currentLocked.length === 0) {
+        delete newLocked[group];
+      } else {
+        newLocked[group] = currentLocked;
+      }
+    } else {
+      newLocked[group] = [...currentLocked, value];
+      const newSelected = { ...state.selected };
+      const selectedList = newSelected[group] || [];
+      const selectedIndex = selectedList.indexOf(value);
+      if (selectedIndex > -1) {
+        selectedList.splice(selectedIndex, 1);
+        newSelected[group] = selectedList;
+        StateManager.setState({ selected: newSelected, locked: newLocked });
+        return;
+      }
+    }
+
+    StateManager.setState({ locked: newLocked });
+  },
+
+  /**
    * 全选分组
    * @param {string} group - 分组名
    */
