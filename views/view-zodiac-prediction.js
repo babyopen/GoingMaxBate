@@ -86,17 +86,24 @@ const ViewZodiacPrediction = {
     var currentX = 0;
     var isDragging = false;
 
-    function updateSlide(index) {
+    var DOTS_CONTAINER_ID = 'zodiacPredSwiperDots';
+    var DOT_CLASS = 'freq-swiper-dot';
+
+    function updateSlide(index, animate) {
       if (index < 0) index = 0;
       if (index >= totalSlides) index = totalSlides - 1;
-      
+
       currentIndex = index;
       var translateX = -(index * 100);
       wrapper.style.transform = 'translateX(' + translateX + '%)';
 
-      var dotsContainer = document.getElementById('freqSwiperDots');
+      if (animate !== false) {
+        wrapper.style.transition = '';
+      }
+
+      var dotsContainer = document.getElementById(DOTS_CONTAINER_ID);
       if (dotsContainer) {
-        var dots = dotsContainer.querySelectorAll('.freq-swiper-dot');
+        var dots = dotsContainer.querySelectorAll('.' + DOT_CLASS);
         dots.forEach(function(dot, idx) {
           dot.classList.toggle('active', idx === currentIndex);
         });
@@ -105,23 +112,35 @@ const ViewZodiacPrediction = {
 
     function handleTouchStart(e) {
       isDragging = true;
+      wrapper.style.transition = 'none';
       startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
       currentX = startX;
+      lastMoveTime = Date.now();
     }
+
+    var lastMoveTime = 0;
 
     function handleTouchMove(e) {
       if (!isDragging) return;
       currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+      lastMoveTime = Date.now();
+      var diff = startX - currentX;
+      var offsetPercent = -(currentIndex * 100) - (diff / wrapper.offsetWidth * 100);
+      wrapper.style.transform = 'translateX(' + offsetPercent + '%)';
     }
 
     function handleTouchEnd() {
       if (!isDragging) return;
       isDragging = false;
+      wrapper.style.transition = '';
 
       var diff = startX - currentX;
-      var threshold = 50;
+      var absDiff = Math.abs(diff);
+      var MIN_DISPLACEMENT = 20;
+      var threshold = wrapper.offsetWidth * 0.15;
+      var velocity = absDiff / Math.max(Date.now() - lastMoveTime, 1);
 
-      if (Math.abs(diff) > threshold) {
+      if (absDiff > threshold || (absDiff > MIN_DISPLACEMENT && velocity > 0.5)) {
         if (diff > 0 && currentIndex < totalSlides - 1) {
           updateSlide(currentIndex + 1);
         } else if (diff < 0 && currentIndex > 0) {
@@ -1169,18 +1188,26 @@ const ViewZodiacPrediction = {
     var startX = 0;
     var currentX = 0;
     var isDragging = false;
+    var lastMoveTime = 0;
 
-    function updateSlide(index) {
+    var DOTS_CONTAINER_ID = 'freqSwiperDots';
+    var DOT_CLASS = 'freq-swiper-dot';
+
+    function updateSlide(index, animate) {
       if (index < 0) index = 0;
       if (index >= totalSlides) index = totalSlides - 1;
-      
+
       currentIndex = index;
       var translateX = -(index * 100);
       wrapper.style.transform = 'translateX(' + translateX + '%)';
 
-      var dotsContainer = document.getElementById('freqSwiperDots');
+      if (animate !== false) {
+        wrapper.style.transition = '';
+      }
+
+      var dotsContainer = document.getElementById(DOTS_CONTAINER_ID);
       if (dotsContainer) {
-        var dots = dotsContainer.querySelectorAll('.freq-swiper-dot');
+        var dots = dotsContainer.querySelectorAll('.' + DOT_CLASS);
         dots.forEach(function(dot, idx) {
           dot.classList.toggle('active', idx === currentIndex);
         });
@@ -1189,23 +1216,33 @@ const ViewZodiacPrediction = {
 
     function handleTouchStart(e) {
       isDragging = true;
+      wrapper.style.transition = 'none';
       startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
       currentX = startX;
+      lastMoveTime = Date.now();
     }
 
     function handleTouchMove(e) {
       if (!isDragging) return;
       currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+      lastMoveTime = Date.now();
+      var diff = startX - currentX;
+      var offsetPercent = -(currentIndex * 100) - (diff / wrapper.offsetWidth * 100);
+      wrapper.style.transform = 'translateX(' + offsetPercent + '%)';
     }
 
     function handleTouchEnd() {
       if (!isDragging) return;
       isDragging = false;
+      wrapper.style.transition = '';
 
       var diff = startX - currentX;
-      var threshold = 50;
+      var absDiff = Math.abs(diff);
+      var MIN_DISPLACEMENT = 20;
+      var threshold = wrapper.offsetWidth * 0.15;
+      var velocity = absDiff / Math.max(Date.now() - lastMoveTime, 1);
 
-      if (Math.abs(diff) > threshold) {
+      if (absDiff > threshold || (absDiff > MIN_DISPLACEMENT && velocity > 0.5)) {
         if (diff > 0 && currentIndex < totalSlides - 1) {
           updateSlide(currentIndex + 1);
         } else if (diff < 0 && currentIndex > 0) {
@@ -1230,7 +1267,7 @@ const ViewZodiacPrediction = {
     wrapper.setAttribute('data-freq-current', '0');
 
     ViewZodiacPrediction.freqSwiperUpdate = updateSlide;
-    
+
     updateSlide(0);
   },
 
@@ -1246,18 +1283,26 @@ const ViewZodiacPrediction = {
     var startX = 0;
     var currentX = 0;
     var isDragging = false;
+    var lastMoveTime = 0;
 
-    function updateSlide(index) {
+    var DOTS_CONTAINER_ID = 'zoneSwiperDots';
+    var DOT_CLASS = 'zone-swiper-dot';
+
+    function updateSlide(index, animate) {
       if (index < 0) index = 0;
       if (index >= totalSlides) index = totalSlides - 1;
-      
+
       currentIndex = index;
       var translateX = -(index * 100);
       wrapper.style.transform = 'translateX(' + translateX + '%)';
 
-      var dotsContainer = document.getElementById('zoneSwiperDots');
+      if (animate !== false) {
+        wrapper.style.transition = '';
+      }
+
+      var dotsContainer = document.getElementById(DOTS_CONTAINER_ID);
       if (dotsContainer) {
-        var dots = dotsContainer.querySelectorAll('.zone-swiper-dot');
+        var dots = dotsContainer.querySelectorAll('.' + DOT_CLASS);
         dots.forEach(function(dot, idx) {
           dot.classList.toggle('active', idx === currentIndex);
         });
@@ -1266,23 +1311,33 @@ const ViewZodiacPrediction = {
 
     function handleTouchStart(e) {
       isDragging = true;
+      wrapper.style.transition = 'none';
       startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
       currentX = startX;
+      lastMoveTime = Date.now();
     }
 
     function handleTouchMove(e) {
       if (!isDragging) return;
       currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+      lastMoveTime = Date.now();
+      var diff = startX - currentX;
+      var offsetPercent = -(currentIndex * 100) - (diff / wrapper.offsetWidth * 100);
+      wrapper.style.transform = 'translateX(' + offsetPercent + '%)';
     }
 
     function handleTouchEnd() {
       if (!isDragging) return;
       isDragging = false;
+      wrapper.style.transition = '';
 
       var diff = startX - currentX;
-      var threshold = 50;
+      var absDiff = Math.abs(diff);
+      var MIN_DISPLACEMENT = 20;
+      var threshold = wrapper.offsetWidth * 0.15;
+      var velocity = absDiff / Math.max(Date.now() - lastMoveTime, 1);
 
-      if (Math.abs(diff) > threshold) {
+      if (absDiff > threshold || (absDiff > MIN_DISPLACEMENT && velocity > 0.5)) {
         if (diff > 0 && currentIndex < totalSlides - 1) {
           updateSlide(currentIndex + 1);
         } else if (diff < 0 && currentIndex > 0) {
@@ -1307,7 +1362,7 @@ const ViewZodiacPrediction = {
     wrapper.setAttribute('data-zone-current', '0');
 
     ViewZodiacPrediction.zoneSwiperUpdate = updateSlide;
-    
+
     updateSlide(0);
   },
 
