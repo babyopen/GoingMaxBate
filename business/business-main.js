@@ -404,7 +404,6 @@ const Business = {
         if(!silentUpdate) Toast.show('已是最新数据');
       }
     } catch(e) {
-      console.error('加载历史数据失败', e);
       if(cacheLatestExpect > currentLatestExpect) {
         const newAnalysis = { ...state.analysis, historyData: cache.data };
         StateManager.setState({ analysis: newAnalysis }, false);
@@ -670,14 +669,15 @@ const Business = {
 
     let curStreak = 1, maxStreak = 1, current = 1;
     if(list.length >= 2) {
-      const firstShape = `${Business.getSpecial(list[0]).odd}_${Business.getSpecial(list[0]).big}`;
+      const firstS = Business.getSpecial(list[0]);
+      const firstShape = `${firstS.odd}_${firstS.big}`;
       for(let i = 1; i < list.length; i++) {
         const s = Business.getSpecial(list[i]);
         const shape = `${s.odd}_${s.big}`;
         if(shape === firstShape) curStreak++;
         else break;
       }
-      let prevShape = `${Business.getSpecial(list[0]).odd}_${Business.getSpecial(list[0]).big}`;
+      let prevShape = firstShape;
       for(let i = 1; i < list.length; i++) {
         const s = Business.getSpecial(list[i]);
         const shape = `${s.odd}_${s.big}`;
@@ -1356,7 +1356,6 @@ const Business = {
           prevRecord.isHit = false;
           prevRecord.hitType = null;
         }
-        console.log('[DB回测-核对] 期号', prevExpect, '开奖:', BusinessPredictOld._toZodiac(currentNum), '→', prevRecord.isHit ? (prevRecord.hitType === 'main' ? '主推中✓' : '备选中○') : '未命中✗');
       }
     }
 
@@ -1371,7 +1370,6 @@ const Business = {
           existRecord.mainPredictions = result.main.slice();
           existRecord.backupPredictions = result.backup ? result.backup.slice() : [];
           existRecord.currentNum = currentNum;
-          console.log('[DB回测-更新] 期号', expect, '预测内容已更新，重置为待开奖');
         }
 
         Storage.saveDBBacktestRecords(records);
@@ -1415,8 +1413,6 @@ const Business = {
       hitType: null
     };
 
-    console.log('[DB回测-新建] 期号', expect || '(无期号)', '推荐:', result.main.join(' '), result.backup ? '(' + result.backup.join(' ') + ')' : '');
-
     records.unshift(newRecord);
     var maxRecords = 50;
     if (records.length > maxRecords) {
@@ -1441,8 +1437,6 @@ const Business = {
       }
     }
 
-    console.log('[DB回测-去重] 原始记录数:', records.length, '→ 去重后:', unique.length);
-
     return unique;
   },
 
@@ -1459,7 +1453,6 @@ const Business = {
       if (isNaN(recordExpect)) return;
 
       if (recordExpect > latestNum && record.actualResult !== null) {
-        console.log('[DB回测-清理] 期号', record.expect, '是未来期却被标记为已开奖，重置为待开奖');
         record.actualResult = null;
         record.isHit = null;
         record.hitType = null;
@@ -1467,96 +1460,10 @@ const Business = {
       }
 
       if (recordExpect === latestNum && record.actualResult === null) {
-        console.log('[DB回测-清理] 期号', record.expect, '是当前最新期但未开奖，保持待开奖');
       }
     });
-
-    if (cleaned) {
-      console.log('[DB回测-清理] 已清理无效的核对数据');
-    }
 
     return records;
-  },
-
-  calculateDBBacktestStats: (latestExpect) => {
-    var records = Storage.getDBBacktestRecords();
-
-    records = Business._deduplicateByExpect(records);
-    records = Business._cleanInvalidRecords(records, latestExpect);
-
-    if (latestExpect) {
-      Storage.saveDBBacktestRecords(records);
-    }
-
-    var stats = {
-      totalRecords: records.length,
-      hitCount: 0,
-      mainHitCount: 0,
-      backupHitCount: 0,
-      missCount: 0,
-      pendingCount: 0,
-      recentRecords: [],
-      consecutiveHits: 0,
-      maxConsecutiveHits: 0,
-      hitRate: '0.0'
-    };
-
-    var validRecords = records.filter(function(r) { return r.isHit !== null; });
-    stats.pendingCount = records.length - validRecords.length;
-
-    validRecords.forEach(function(record) {
-      if (record.isHit) {
-        stats.hitCount++;
-        if (record.hitType === 'main') {
-          stats.mainHitCount++;
-        } else if (record.hitType === 'backup') {
-          stats.backupHitCount++;
-        }
-      } else {
-        stats.missCount++;
-        stats.consecutiveHits = 0;
-      }
-    });
-
-    var tempConsecutive = 0;
-    for (var i = validRecords.length - 1; i >= 0; i--) {
-      if (validRecords[i].isHit) {
-        tempConsecutive++;
-        if (tempConsecutive > stats.maxConsecutiveHits) {
-          stats.maxConsecutiveHits = tempConsecutive;
-        }
-      } else {
-        tempConsecutive = 0;
-      }
-    }
-
-    for (var j = 0; j < validRecords.length; j++) {
-      if (validRecords[j].isHit) {
-        stats.consecutiveHits++;
-      } else {
-        break;
-      }
-    }
-
-    if (validRecords.length > 0) {
-      stats.hitRate = ((stats.hitCount / validRecords.length) * 100).toFixed(1);
-    }
-
-    stats.recentRecords = records.slice(0, 10).map(function(r) {
-      return {
-        id: r.id,
-        predictTime: r.predictTime,
-        expect: r.expect || '',
-        mainPredictions: r.mainPredictions,
-        backupPredictions: r.backupPredictions,
-        actualResult: r.actualResult ? BusinessPredictOld._toZodiac(r.actualResult) : null,
-        isHit: r.isHit,
-        hitType: r.hitType
-      };
-    });
-
-    console.log('[DB回测] 统计:', JSON.stringify(stats));
-    return stats;
   },
 
   saveGiongBacktestRecord: (giongData, currentNum, expect) => {

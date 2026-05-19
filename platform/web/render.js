@@ -33,7 +33,6 @@ const Render = {
       DOM.resultCount.innerText = filteredList.length;
       DOM.excludeCount.innerText = state.excluded.length;
     } catch(e) {
-      console.error('渲染结果失败', e);
     }
   },
 
@@ -95,7 +94,6 @@ const Render = {
         }
       });
     } catch(e) {
-      console.error('渲染标签状态失败', e);
     }
   },
 
@@ -119,7 +117,6 @@ const Render = {
       DOM.excludeGrid.innerHTML = '';
       DOM.excludeGrid.appendChild(fragment);
     } catch(e) {
-      console.error('渲染排除网格失败', e);
     }
   },
 
@@ -143,7 +140,6 @@ const Render = {
       DOM.zodiacTags.innerHTML = '';
       DOM.zodiacTags.appendChild(fragment);
     } catch(e) {
-      console.error('渲染生肖标签失败', e);
     }
   },
 
@@ -165,7 +161,6 @@ const Render = {
       const fragment = document.createDocumentFragment();
 
       displayList.forEach((item, index) => {
-        const realIndex = state.showAllFilters ? index : index;
         const previewList = Filter.getFilteredList(item.selected, item.excluded);
         const previewFragment = Utils.createFragment(previewList, (num) => {
           const wrapper = document.createElement('div');
@@ -183,11 +178,11 @@ const Render = {
             <div class="filter-preview"></div>
           </div>
           <div class="filter-item-btns">
-            <button data-action="${CONFIG.ACTIONS.LOAD_FILTER}" data-index="${realIndex}">加载</button>
-            <button data-action="${CONFIG.ACTIONS.RENAME_FILTER}" data-index="${realIndex}">重命名</button>
-            <button data-action="${CONFIG.ACTIONS.COPY_FILTER}" data-index="${realIndex}">复制</button>
-            <button data-action="${CONFIG.ACTIONS.TOP_FILTER}" data-index="${realIndex}">置顶</button>
-            <button class="del" data-action="${CONFIG.ACTIONS.DELETE_FILTER}" data-index="${realIndex}">删除</button>
+            <button data-action="${CONFIG.ACTIONS.LOAD_FILTER}" data-index="${index}">加载</button>
+            <button data-action="${CONFIG.ACTIONS.RENAME_FILTER}" data-index="${index}">重命名</button>
+            <button data-action="${CONFIG.ACTIONS.COPY_FILTER}" data-index="${index}">复制</button>
+            <button data-action="${CONFIG.ACTIONS.TOP_FILTER}" data-index="${index}">置顶</button>
+            <button class="del" data-action="${CONFIG.ACTIONS.DELETE_FILTER}" data-index="${index}">删除</button>
           </div>
         `;
         itemWrapper.querySelector('.filter-preview').appendChild(previewFragment);
@@ -205,7 +200,6 @@ const Render = {
       DOM.filterList.innerHTML = '';
       DOM.filterList.appendChild(fragment);
     } catch(e) {
-      console.error('渲染方案列表失败', e);
     }
   },
 
@@ -239,7 +233,6 @@ const Render = {
       StateManager.setState({ numList: list }, false);
       return list;
     } catch(e) {
-      console.error('生成号码列表失败', e);
       Toast.show('数据初始化失败，请刷新重试');
       return [];
     }

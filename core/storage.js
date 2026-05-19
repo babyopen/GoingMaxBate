@@ -21,16 +21,25 @@ const Storage = {
   _memoryStorage: {},
 
   /**
+   * localStorage可用性缓存，避免重复检测
+   * @private
+   */
+  _storageAvailable: null,
+
+  /**
    * 检测localStorage是否可用
    * @returns {boolean} 是否可用
    */
   isLocalStorageAvailable: () => {
+    if(Storage._storageAvailable !== null) return Storage._storageAvailable;
     try {
       const testKey = '__test__';
       localStorage.setItem(testKey, testKey);
       localStorage.removeItem(testKey);
+      Storage._storageAvailable = true;
       return true;
     } catch(e) {
+      Storage._storageAvailable = false;
       return false;
     }
   },
