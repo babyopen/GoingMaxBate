@@ -75,16 +75,20 @@ const ViewZodiacPrediction = {
 
   _createSwiper: function(config) {
     var w = document.getElementById(config.wrapperId);
-    if (!w || !w.offsetWidth) return;
+    if (!w) return;
     if (w.dataset.swiperInit) return;
     w.dataset.swiperInit = '1';
     var cards = w.querySelectorAll(config.cardSelector);
     if (!cards || !cards.length) return;
     var idx = config.initialIndex || 0;
     var total = cards.length;
-    var wrapperWidth = w.offsetWidth;
     var sx = 0, cx = 0, dragging = false, lastT = 0, lastX = 0, lastY = 0;
     var animating = false;
+    var animTimer = null;
+
+    function getWidth() {
+      return w.offsetWidth || 0;
+    }
 
     function setTransform(offsetPercent, animate) {
       if (animate) {
@@ -95,27 +99,35 @@ const ViewZodiacPrediction = {
       w.style.transform = 'translate3d(' + offsetPercent + '%, 0, 0)';
     }
 
-    function slide(i, animate) {
-      if (i < 0) i = 0;
-      if (i >= total) i = total - 1;
-      idx = i;
-      animating = true;
-      setTransform(-i * 100, animate !== false);
+    function updateDots() {
       var dc = document.getElementById(config.dotsId);
       if (dc) {
         var dots = dc.querySelectorAll('.' + config.dotClass);
         dots.forEach(function(d, di) { d.classList.toggle('active', di === idx); });
       }
-      setTimeout(function() { animating = false; }, 300);
+    }
+
+    function slide(i, animate) {
+      if (i < 0) i = 0;
+      if (i >= total) i = total - 1;
+      idx = i;
+      animating = true;
+      if (animTimer) clearTimeout(animTimer);
+      setTransform(-i * 100, animate !== false);
+      updateDots();
+      animTimer = setTimeout(function() { animating = false; }, 320);
     }
 
     var isTouchDevice = 'ontouchstart' in window;
 
     function start(e) {
       if (e.type === 'mousedown' && isTouchDevice) return;
-      if (animating) return;
+      var ww = getWidth();
+      if (!ww) return;
       dragging = true;
       w.style.transition = 'none';
+      if (animTimer) clearTimeout(animTimer);
+      animating = false;
       sx = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
       cx = sx;
       lastX = sx;
@@ -134,12 +146,11 @@ const ViewZodiacPrediction = {
         nowY = e.touches[0].clientY;
       }
       
-      if (e.type === 'touchmove' && e.cancelable !== false) {
-        var dx = Math.abs(nowX - lastX);
-        var dy = Math.abs(nowY - lastY);
-        if (dx > dy) {
-          e.preventDefault();
-        }
+      var dx = Math.abs(nowX - lastX);
+      var dy = Math.abs(nowY - lastY);
+      
+      if (e.type === 'touchmove' && e.cancelable !== false && dx > dy) {
+        e.preventDefault();
       }
       
       cx = nowX;
@@ -147,7 +158,9 @@ const ViewZodiacPrediction = {
       lastY = nowY;
       lastT = Date.now();
       var d = sx - cx;
-      var offsetPercent = -(idx * 100) - (d / wrapperWidth * 100);
+      var ww = getWidth();
+      if (!ww) return;
+      var offsetPercent = -(idx * 100) - (d / ww * 100);
       w.style.transform = 'translate3d(' + offsetPercent + '%, 0, 0)';
     };
 
@@ -162,11 +175,13 @@ const ViewZodiacPrediction = {
       var now = Date.now();
       var elapsed = Math.max(now - lastT, 16);
       var vel = ad / elapsed;
+      var ww = getWidth();
+      if (!ww) { slide(idx, true); return; }
+      var cardW = ww / total;
+      var swipeThreshold = cardW * 0.04;
+      var velThreshold = 0.12;
 
-      var swipeThreshold = wrapperWidth / total * 0.03;
-      var velThreshold = 0.1;
-
-      if (ad > swipeThreshold || (ad > wrapperWidth / total * 0.015 && vel > velThreshold)) {
+      if (ad > swipeThreshold || (ad > cardW * 0.02 && vel > velThreshold)) {
         if (d > 0 && idx < total - 1) {
           idx++;
         } else if (d < 0 && idx > 0) {
@@ -190,7 +205,7 @@ const ViewZodiacPrediction = {
 
     if (config.dataAttr) w.setAttribute(config.dataAttr[0], config.dataAttr[1]);
     ViewZodiacPrediction[config.updateRef] = slide;
-    slide(idx, false);
+    setTimeout(function() { slide(idx, false); }, 50);
   },
 
   initPredSwiper: function() {

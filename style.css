@@ -2887,8 +2887,7 @@ input[type="checkbox"]{
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  touch-action: pan-y;
-  overflow-x: hidden;
+  touch-action: pan-y pinch-zoom;
 }
 
 .freq-swiper-wrapper {
@@ -2896,11 +2895,12 @@ input[type="checkbox"]{
   flex: 1;
   min-height: 0;
   will-change: transform;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
   user-select: none;
   -webkit-user-select: none;
   transform: translateZ(0);
   backface-visibility: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .freq-swiper-wrapper .freq-card {
@@ -2976,18 +2976,18 @@ input[type="checkbox"]{
   overflow: hidden;
   margin: 0 calc(-1 * clamp(12px, 3vw, 20px));
   padding-bottom: 8px;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
 }
 
 .zone-swiper-wrapper {
   display: flex;
-  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
   user-select: none;
   -webkit-user-select: none;
   transform: translateZ(0);
   backface-visibility: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .zone-swiper-wrapper .freq-section {
