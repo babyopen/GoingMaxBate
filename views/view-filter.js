@@ -178,12 +178,7 @@ const ViewFilter = {
       newSelected[group] = matched;
       StateManager.setState({ selected: newSelected });
     });
-    // 触发对应组的渲染更新
-    ViewFilter._batchTargetGroups.forEach(group => {
-      if (group === 'zodiac') Business.renderZodiacGroup();
-      else if (group === 'color') Business.renderColorGroup();
-      else if (group === 'colorsx') Business.renderColorsxGroup();
-    });
+    // 关闭弹窗并提示
     ViewFilter.closeBatchModal();
     Toast.show(`已选择 ${names.length} 个名称`);
   }

@@ -79,6 +79,7 @@ body{
 /* 图标按钮（紧凑版） */
 .btn-icon{
   min-width:32px;width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:8px;font-size:14px;
+  background:var(--bg-secondary);color:var(--primary);
 }
 .btn-icon-red{background:rgba(255,59,48,0.1) !important;color:var(--danger) !important}
 .btn-bar{display:flex;gap:8px;margin-bottom:12px}
