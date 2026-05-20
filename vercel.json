@@ -9,6 +9,10 @@
   ],
   "routes": [
     {
+      "src": "/api/history/(.*)",
+      "dest": "https://history.macaumarksix.com/history/macaujc2/y/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1"
     }
