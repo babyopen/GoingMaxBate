@@ -1240,7 +1240,6 @@ const Business = {
     ViewZodiacPrediction.renderFrequencyRating(freqResult);
 
     var patternResult = ZodiacPrediction.analyzeZonePatterns(historyData);
-    ViewZodiacPrediction.renderZoneAnalysis(patternResult);
 
     if (freqResult && patternResult) {
       var recommend = ZodiacPrediction.getZoneRecommend(historyData, freqResult, patternResult);

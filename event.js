@@ -217,12 +217,6 @@ const EventBinder = {
           panel.style.display = panel.dataset.predPanel === predTab ? '' : 'none';
         });
       }
-      else if(action === 'switchZoneAnalysis') {
-        var zoneIndex = Number(actionBtn.dataset.zoneIndex);
-        if (ViewZodiacPrediction.zoneSwiperUpdate) {
-          ViewZodiacPrediction.zoneSwiperUpdate(zoneIndex);
-        }
-      }
       return;
     }
 

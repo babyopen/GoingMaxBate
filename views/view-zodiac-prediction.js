@@ -374,31 +374,10 @@ const ViewZodiacPrediction = {
         return;
       }
 
-      var storageKey = 'ZONE_PREV_ZONE_' + period.key;
-      var appearPosKey = 'ZONE_APPEAR_POS_' + period.key;
-      var lastCountKey = 'ZONE_LAST_COUNT_' + period.key;
-      
-      var prevZoneMap = {};
-      var cachedPrev = Storage.get(storageKey);
-      if (cachedPrev) prevZoneMap = cachedPrev;
-
-      var lastAppearPosMap = {};
-      var cachedAppear = Storage.get(appearPosKey);
-      if (cachedAppear) lastAppearPosMap = cachedAppear;
-
-      var lastCountMap = {};
-      var cachedCount = Storage.get(lastCountKey);
-      if (cachedCount) lastCountMap = cachedCount;
-
-      var newZoneMap = {};
-      var newAppearPosMap = {};
-      var newCountMap = {};
-
       var grouped = {};
       zoneOrder.forEach(function(z) { grouped[z] = []; });
       data.forEach(function(item) {
         grouped[item.zone].push(item);
-        newCountMap[item.zodiac] = item.count;
       });
 
       var display = period.key === 'p12' ? '' : ' style="display:none;"';
@@ -415,38 +394,14 @@ const ViewZodiacPrediction = {
         html += '</div>';
         html += '<div class="zone-card-list">';
         items.forEach(function(item) {
-          var currentZone = item.zone;
-          var prevZone = prevZoneMap[item.zodiac] || currentZone;
-          var lastCount = lastCountMap[item.zodiac];
-          var currCount = item.count;
-          var lastAppearPos = lastAppearPosMap[item.zodiac];
-          
-          if (lastCount !== undefined && currCount > lastCount) {
-            newAppearPosMap[item.zodiac] = prevZone;
-          } else if (lastCount === undefined && currCount > 0) {
-            newAppearPosMap[item.zodiac] = currentZone;
-          } else if (!lastAppearPos) {
-            newAppearPosMap[item.zodiac] = currentZone;
-          }
-          
-          var appearPosForBadge = lastAppearPosMap[item.zodiac];
-          if (!appearPosForBadge && newAppearPosMap[item.zodiac]) {
-            appearPosForBadge = newAppearPosMap[item.zodiac];
-          }
-          if (!appearPosForBadge) {
-            appearPosForBadge = currentZone;
-          }
-          
-          var missClass = zoneColors[prevZone] || '';
-          var badgeClass = zoneColors[appearPosForBadge] || '';
-          newZoneMap[item.zodiac] = currentZone;
+          var badgeClass = zoneColors[item.zone] || '';
 
           var dropArrow = (item.willDrop) ? '<span class="drop-arrow">▼</span>' : '';
           html += '<div class="zone-zod-card">';
           html += '<div class="zod-card-count-badge ' + badgeClass + '">' + item.count + dropArrow + '</div>';
           html += '<div class="zod-card-name">' + item.zodiac + '</div>';
           html += '<div class="zod-card-stats">';
-          html += '<span class="zod-card-miss ' + missClass + '">' + item.miss + '期</span>';
+          html += '<span class="zod-card-miss">' + item.miss + '期</span>';
           html += '</div>';
           html += '</div>';
         });
@@ -455,20 +410,6 @@ const ViewZodiacPrediction = {
       });
 
       html += '</div>';
-
-      var changed = false;
-      var oldKeys = Object.keys(prevZoneMap);
-      var newKeys = Object.keys(newZoneMap);
-      if (oldKeys.length !== newKeys.length) { changed = true; }
-      else {
-        for (var ki = 0; ki < newKeys.length; ki++) {
-          if (prevZoneMap[newKeys[ki]] !== newZoneMap[newKeys[ki]]) { changed = true; break; }
-        }
-      }
-      if (changed) Storage.set(storageKey, newZoneMap);
-      
-      Storage.set(appearPosKey, newAppearPosMap);
-      Storage.set(lastCountKey, newCountMap);
     });
 
     html += '</div>';
@@ -483,108 +424,7 @@ const ViewZodiacPrediction = {
     grid.innerHTML = html;
   },
 
-  renderZoneAnalysis: function(patternResult) {
-    var container = document.getElementById('giongAnalysisPanel');
-    if (!container) return;
 
-    if (!patternResult) {
-      container.innerHTML = '<div class="empty-tip">数据不足，无法进行历史概率分析（需至少25期）</div>';
-      return;
-    }
-
-    var periods = [
-      { key: 'p12', label: '基于12期滚动窗口' },
-      { key: 'p24', label: '基于24期滚动窗口' },
-      { key: 'p36', label: '基于36期滚动窗口' }
-    ];
-
-    var zoneColors = {
-        '顶峰区': 'zone-peak',
-        '高频区': 'zone-high',
-        '中频区': 'zone-mid',
-        '低频区': 'zone-low',
-        '等待区': 'zone-wait'
-      };
-      var zoneLabels = ['等待区', '低频区', '中频区', '高频区', '顶峰区'];
-
-    var html = '';
-    html += '<div class="analysis-section-title">历史区域概率分析</div>';
-    html += '<div class="analysis-desc">基于60期历史滚动：若生肖落入某区域，下一期开出的概率</div>';
-    html += '<div class="zone-swiper-container">';
-    html += '<div class="zone-swiper-wrapper" id="zoneSwiperWrapper">';
-
-    var slideIndex = 0;
-    periods.forEach(function(period) {
-      var data = patternResult[period.key];
-      if (!data) return;
-
-      html += '<div class="freq-section" data-slide-index="' + slideIndex + '"><div class="freq-section-title">' + period.label + '</div>';
-      slideIndex++;
-      html += '<div class="freq-table-wrap"><table class="freq-table">';
-      html += '<thead><tr><th>区域</th><th>样本量</th><th>下一期命中概率</th><th>强度</th></tr></thead>';
-      html += '<tbody>';
-
-      zoneLabels.forEach(function(zone) {
-        var prob = data.zoneProb[zone] || 0;
-        var records = (data.zoneRecords[zone] || []).length;
-
-        var strengthBar;
-        if (prob >= 18) strengthBar = '<span class="prob-bar prob-high">' + prob + '%</span>';
-        else if (prob >= 12) strengthBar = '<span class="prob-bar prob-mid">' + prob + '%</span>';
-        else if (prob >= 8) strengthBar = '<span class="prob-bar prob-low">' + prob + '%</span>';
-        else strengthBar = '<span class="prob-bar prob-mini">' + prob + '%</span>';
-
-        html += '<tr>';
-        html += '<td><span class="freq-zone-tag ' + (zoneColors[zone] || '') + '">' + zone + '</span></td>';
-        html += '<td>' + records + '</td>';
-        html += '<td>' + strengthBar + '</td>';
-
-        var strength;
-        if (prob >= 18) strength = '🔥🔥🔥';
-        else if (prob >= 12) strength = '🔥🔥';
-        else if (prob >= 8) strength = '🔥';
-        else strength = '—';
-
-        html += '<td>' + strength + '</td>';
-        html += '</tr>';
-      });
-
-      html += '</tbody></table></div></div>';
-    });
-
-    html += '</div>';
-    html += '<div class="zone-swiper-dots" id="zoneSwiperDots">';
-    for (var di = 0; di < slideIndex; di++) {
-      var dotActiveClass = di === 0 ? 'active' : '';
-      html += '<span class="zone-swiper-dot ' + dotActiveClass + '" data-zone-index="' + di + '" data-action="switchZoneAnalysis"></span>';
-    }
-    html += '</div>';
-    html += '</div>';
-
-    html += '<div class="analysis-conclusion">';
-    html += '<div class="analysis-conclusion-title">分析结论</div>';
-
-    var p12Data = patternResult.p12;
-    if (p12Data) {
-      var bestZone = '';
-      var bestProb = 0;
-      var worstZone = '';
-      var worstProb = 100;
-      zoneLabels.forEach(function(z) {
-        var p = p12Data.zoneProb[z] || 0;
-        if (p > bestProb) { bestProb = p; bestZone = z; }
-        if (p < worstProb) { worstProb = p; worstZone = z; }
-      });
-      html += '<div class="analysis-item">🔝 最高出现概率区域：<b>' + bestZone + '</b>（' + bestProb + '%）</div>';
-      html += '<div class="analysis-item">🔻 最低出现概率区域：<b>' + worstZone + '</b>（' + worstProb + '%）</div>';
-    }
-
-    html += '</div>';
-
-    container.innerHTML = html;
-    
-    ViewZodiacPrediction.initZoneSwiper();
-  },
 
   renderZoneRecommend: function(zodiacList, nextExpect) {
     var container = document.getElementById('giongRecommendPanel');
@@ -1478,15 +1318,6 @@ const ViewZodiacPrediction = {
     });
   },
 
-  initZoneSwiper: function() {
-    ViewZodiacPrediction._createSwiper({
-      wrapperId: 'zoneSwiperWrapper', cardSelector: '.freq-section',
-      dotsId: 'zoneSwiperDots', dotClass: 'zone-swiper-dot',
-      updateRef: 'zoneSwiperUpdate', dataAttr: ['data-zone-current', '0']
-    });
-  },
-
-  zoneSwiperUpdate: null,
   predSwiperUpdate: null,
   freqSwiperUpdate: null
 };
