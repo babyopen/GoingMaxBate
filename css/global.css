@@ -91,10 +91,10 @@ body{
 .btn-line:active{opacity:0.7}
 
 /* 标签组件 */
-.tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .tag{
-  padding:10px 16px;border-radius:12px;position:relative;background:var(--bg-secondary);border:none;
-  font-size:15px;font-weight:500;min-height:40px;min-width:44px;text-align:center;
+  padding:6px 12px;border-radius:10px;position:relative;background:var(--bg-secondary);border:2px solid transparent;
+  font-size:13px;min-height:32px;
   cursor:pointer;transition:all var(--anim-fast);touch-action:manipulation;
   -webkit-user-select:none;user-select:none;display:inline-flex;align-items:center;justify-content:center;
 }
