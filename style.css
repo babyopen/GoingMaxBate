@@ -2887,7 +2887,9 @@ input[type="checkbox"]{
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  touch-action: pan-y pinch-zoom;
+  touch-action: pan-x pan-y pinch-zoom;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .freq-swiper-wrapper {
@@ -2895,7 +2897,8 @@ input[type="checkbox"]{
   flex: 1;
   min-height: 0;
   will-change: transform;
-  touch-action: pan-y pinch-zoom;
+  touch-action: pan-x pan-y pinch-zoom;
+  overscroll-behavior-x: contain;
   user-select: none;
   -webkit-user-select: none;
   transform: translateZ(0);
@@ -2976,13 +2979,16 @@ input[type="checkbox"]{
   overflow: hidden;
   margin: 0 calc(-1 * clamp(12px, 3vw, 20px));
   padding-bottom: 8px;
-  touch-action: pan-y pinch-zoom;
+  touch-action: pan-x pan-y pinch-zoom;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .zone-swiper-wrapper {
   display: flex;
   will-change: transform;
-  touch-action: pan-y pinch-zoom;
+  touch-action: pan-x pan-y pinch-zoom;
+  overscroll-behavior-x: contain;
   user-select: none;
   -webkit-user-select: none;
   transform: translateZ(0);
