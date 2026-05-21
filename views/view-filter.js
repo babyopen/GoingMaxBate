@@ -122,6 +122,30 @@ const ViewFilter = {
   _batchTargetGroups: [],
 
   /**
+   * 调整弹窗位置（避开键盘）
+   */
+  adjustModalPosition: () => {
+    const modal = document.getElementById('batchModal');
+    const container = modal?.querySelector('.batch-modal-content');
+    const input = document.getElementById('batchModalInput');
+    if (!modal?.classList.contains('show')) return;
+    if (!container || !input) return;
+
+    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const inputRect = input.getBoundingClientRect();
+    const inputBottom = inputRect.bottom;
+
+    if (inputBottom > viewportHeight - 20) {
+      const offset = inputBottom - (viewportHeight - 20);
+      const maxOffset = container.offsetHeight * 0.6;
+      const translateY = -Math.min(offset, maxOffset);
+      container.style.transform = `translateY(${translateY}px)`;
+    } else {
+      container.style.transform = 'translateY(0)';
+    }
+  },
+
+  /**
    * 显示批量选择弹窗
    * @param {string} groups - 逗号分隔的组名
    */
@@ -130,7 +154,10 @@ const ViewFilter = {
     const input = document.getElementById('batchModalInput');
     const title = document.getElementById('batchModalTitle');
     const hint = modal?.querySelector('.batch-modal-hint');
+    const container = modal?.querySelector('.batch-modal-content');
     if (!modal || !input) return;
+    // 禁止页面滚动
+    document.body.style.overflow = 'hidden';
     ViewFilter._batchTargetGroups = groups ? groups.split(',') : [];
     // 根据分组设置不同的提示
     const group = ViewFilter._batchTargetGroups[0];
@@ -158,11 +185,13 @@ const ViewFilter = {
       if (hint) hint.textContent = '输入要选择的名称，支持多种分隔符';
       input.placeholder = placeholder;
     }
-    // 锁定背景滚动
-    document.body.style.overflow = 'hidden';
     modal.classList.add('show');
+    if (container) container.style.transform = 'translateY(0)';
     input.value = '';
-    setTimeout(() => input.focus(), 300);
+    setTimeout(() => {
+      input.focus();
+      setTimeout(() => ViewFilter.adjustModalPosition(), 150);
+    }, 100);
   },
 
   /**
@@ -170,9 +199,12 @@ const ViewFilter = {
    */
   closeBatchModal: () => {
     const modal = document.getElementById('batchModal');
-    if (!modal) return;
-    modal.classList.remove('show');
-    // 解锁背景滚动
+    const input = document.getElementById('batchModalInput');
+    const container = modal?.querySelector('.batch-modal-content');
+    if (input) input.blur();
+    if (modal) modal.classList.remove('show');
+    if (container) container.style.transform = 'translateY(0)';
+    // 恢复页面滚动
     document.body.style.overflow = '';
   },
 
