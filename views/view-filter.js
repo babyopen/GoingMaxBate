@@ -159,6 +159,19 @@ const ViewFilter = {
     ViewFilter._batchTargetGroups = groups ? groups.split(',') : [];
     // 根据分组设置不同的提示
     const group = ViewFilter._batchTargetGroups[0];
+    const groupNames = {
+      'num': '号码选择',
+      'zodiac': '生肖',
+      'color,colorsx': '波色',
+      'type': '属性',
+      'element': '五行',
+      'head': '头数',
+      'tail': '尾数',
+      'sum': '尾合',
+      'bs,sumOdd,sumSize,tailSize': '大小',
+      'hot': '热号',
+      'exclude': '号码排除'
+    };
     const groupPlaceholders = {
       'num': '例如：01 02 03 或 1-5',
       'zodiac': '例如：马 牛 虎 或 龙 蛇',
@@ -173,13 +186,14 @@ const ViewFilter = {
       'exclude': '例如：1 2 3 或 01-10'
     };
     // 排除组特殊处理
+    const groupName = groupNames[group] || '选择';
     if (group === 'exclude') {
-      if (title) title.textContent = '批量排除号码';
+      if (title) title.textContent = `批量${groupName}`;
       if (hint) hint.textContent = '输入要排除的号码，支持多种分隔符';
       input.placeholder = groupPlaceholders['exclude'];
     } else {
       const placeholder = groupPlaceholders[group] || '例如：马 牛 虎';
-      if (title) title.textContent = '批量选择';
+      if (title) title.textContent = `批量选择${groupName}`;
       if (hint) hint.textContent = '输入要选择的名称，支持多种分隔符';
       input.placeholder = placeholder;
     }
