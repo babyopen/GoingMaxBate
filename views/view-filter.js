@@ -158,6 +158,8 @@ const ViewFilter = {
       if (hint) hint.textContent = '输入要选择的名称，支持多种分隔符';
       input.placeholder = placeholder;
     }
+    // 锁定背景滚动
+    document.body.style.overflow = 'hidden';
     modal.classList.add('show');
     input.value = '';
     setTimeout(() => input.focus(), 300);
@@ -170,6 +172,8 @@ const ViewFilter = {
     const modal = document.getElementById('batchModal');
     if (!modal) return;
     modal.classList.remove('show');
+    // 解锁背景滚动
+    document.body.style.overflow = '';
   },
 
   /**
