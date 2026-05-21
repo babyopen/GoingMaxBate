@@ -127,14 +127,26 @@ const ViewFilter = {
   adjustModalPosition: () => {
     const modal = document.getElementById('batchModal');
     const container = modal?.querySelector('.batch-modal-content');
-    if (!modal?.classList.contains('show') || !container) return;
+    const input = document.getElementById('batchModalInput');
+    if (!modal?.classList.contains('show')) return;
+    if (!container || !input) return;
 
+    const inputRect = input.getBoundingClientRect();
+    const inputBottom = inputRect.bottom;
     const screenHeight = window.innerHeight;
-    const viewportHeight = window.visualViewport?.height || screenHeight;
-    const keyboardHeight = screenHeight - viewportHeight;
+    const availableHeight = window.visualViewport ? window.visualViewport.height : screenHeight;
+    const keyboardHeight = screenHeight - availableHeight;
 
-    if (keyboardHeight > 50) {
-      container.style.transform = `translateY(${-keyboardHeight}px)`;
+    if (keyboardHeight > 0 && inputBottom > availableHeight - 20) {
+      const offset = inputBottom - (availableHeight - 20);
+      const maxOffset = container.offsetHeight * 0.6;
+      const translateY = Math.max(-offset, -maxOffset);
+      container.style.transform = `translateY(${translateY}px)`;
+    } else if (inputBottom > availableHeight - 20) {
+      const offset = inputBottom - (availableHeight - 20);
+      const maxOffset = container.offsetHeight * 0.6;
+      const translateY = -Math.min(offset, maxOffset);
+      container.style.transform = `translateY(${translateY}px)`;
     } else {
       container.style.transform = 'translateY(0)';
     }
