@@ -55,45 +55,48 @@ npm run lint:business
 │       ├── dom.js
 │       ├── render.js
 │       ├── toast.js
-│       ├── performance-monitor.js  # ⭐ 性能监控（v2.0.9）
 │       ├── input-modal.js
 │       └── modals/
 │
 ├── core/                   # 核心层（只读）
 │   ├── config.js
-│   ├── config-module.js    # ⭐ ES Module模板（v2.0.9）
 │   ├── utils.js
 │   ├── state.js
-│   └── storage.js
+│   ├── storage.js
+│   └── common/             # 通用工具（cache/string/platform）
 │
 ├── business/               # 业务层（禁止 DOM）
-│   ├── business-*.js       # 通用业务
-│   ├── business-event-bus.js  # ⭐ 事件总线（v2.0.9）
-│   ├── business-exclude.js    # ⭐ 排除号码模块（v2.0.9）
-│   ├── business-analysis.js   # ⭐ 分析模块（v2.0.9）
-│   ├── business-filter.js     # ⭐ 方案管理模块（v2.0.9）
-│   ├── business-view-helper.js  # ⭐ 视图辅助工具（v2.0.9）
-│   ├── zodiac/             # 生肖类业务
-│   └── sliding-window/     # 滑动窗口业务
+│   ├── main/               # 主业务（事件总线/quick-nav/view-helper 等）
+│   ├── common/             # 通用业务（data/lru/sort/specials/hot-backtest）
+│   ├── exclude/            # 排除号码（exclude + impossible）
+│   ├── analysis/           # 分析模块
+│   ├── filter/             # 方案管理
+│   ├── bookmark/           # 书签
+│   ├── giong/              # Giong 算法
+│   ├── sliding-window/    # 滑动窗口
+│   ├── ultimate/           # 终极算法
+│   └── zodiac/             # 生肖类业务
 │
 ├── data/                   # 数据层
 │   ├── data-query.js
 │   └── filter.js
 │
 ├── views/                  # 视图层
-│   ├── view-common.js
+│   ├── common/             # 通用视图（view-common / view-common-giong）
 │   ├── <页面名>/           # 每页一个子目录
 │   └── modals/             # 弹窗视图
 │
-├── docs/                   # 项目文档与优化建议
-│   ├── 事件总线使用说明.md  # ⭐ v2.0.9
-│   └── 优化全面完成报告.md  # ⭐ v2.0.9 最终版
+├── docs/                   # 项目文档
+│   ├── 项目优化完整指南.md  # ⭐ 推荐起点
+│   ├── 事件总线使用说明.md  # API参考
+│   ├── 优化验证清单.md      # 验证步骤
+│   ├── 项目优化建议.md      # 历史参考
+│   └── 文档清理报告.md      # 清理审计
 │
-├── tests/                  # 测试文件
-│   ├── test-event-bus.html        # ⭐ 事件总线测试（10用例）
-│   ├── test-business-common.html  # ⭐ 业务工具测试（12用例）
-│   ├── test-core-utils.html       # ⭐ 核心工具测试（14用例）
-│   └── test-performance-monitor.html  # ⭐ 性能监控测试（10用例）
+├── scripts/                # 离线脚本工具（Node.js / 控制台）
+│   ├── integration-test-v2.6.7.js  # 最新版集成测试
+│   ├── audit-color-hit.js          # colorHit 离线审计
+│   └── calibrate-impossible.js     # impossible 参数校准
 │
 ├── .trae/rules/            # 架构宪法与规则
 ├── .eslintrc.js            # ESLint 强制校验

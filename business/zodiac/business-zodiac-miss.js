@@ -195,12 +195,9 @@ const ZodiacPredictionMiss = {
    *   - 与回测算法规格统一（复用 _calcTop5ByOccurrenceOrder）
    *
    * @param {Array} historyData - 历史数据（index 0 为最近一期）
-   * @param {number} [windowSize] - 兼容旧调用方保留的参数；本算法不再使用
    * @returns {Object|null} { tail, expect, topFollowers:[{tail, count, percentage}], sampleCount, scannedPeriods }
    */
-  getLatestTailFollowStats: function(historyData, _windowSize) {
-    // 注：_windowSize 为旧调用方兼容性保留的参数（2026-08-18 改为不限期数后不再使用）
-    //   ESLint 允许未使用以下划线开头的形参，故加 _ 前缀
+  getLatestTailFollowStats: function(historyData) {
     if (!historyData || !historyData.length) return null;
 
     // 本期：index 0
@@ -209,8 +206,7 @@ const ZodiacPredictionMiss = {
     const latestTail = Number(latestSpecial.tail);
     const latestExpect = Number(latestItem.expect || 0);
 
-    // 2026-08-18 调整：复用 _calcTop5ByOccurrenceOrder
-    //   - windowSize 参数保留以兼容旧调用方，但已不再使用（算法不限期数）
+    // 2026-08-18 调整：复用 _calcTop5ByOccurrenceOrder（不限期数，凑足 6 个不同尾数即停）
     const top5Result = ZodiacPrediction._calcTop5ByOccurrenceOrder(historyData, latestTail);
     if (!top5Result || !top5Result.top5 || top5Result.top5.length === 0) {
       return {
@@ -279,7 +275,6 @@ const ZodiacPredictionMiss = {
       if (!actualZod) continue;
 
       const isHit = top6.indexOf(actualZod) !== -1;
-      const sampleCount = followStats.targetAppearCount;
       const actualFollow = followStats.topFollowers.filter(function(f) { return f.zodiac === actualZod; })[0];
       const confidence = actualFollow ? actualFollow.percentage : 0;
 

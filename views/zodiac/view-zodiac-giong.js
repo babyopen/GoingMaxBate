@@ -196,7 +196,7 @@ const ViewZodiacGiong = {
   /**
    * 2026-08-18 新增：尾数跟随卡片
    * 取本期特码尾数，过去 24 期窗口内统计该尾数出现后下一期实际开出的尾数分布
-   * 数据源：ZodiacPrediction.getLatestTailFollowStats(historyData, 24)
+   * 数据源：ZodiacPrediction.getLatestTailFollowStats(historyData)
    * 容器：#latestTailFollowPanel（位于综合分析卡片下方）
    */
   renderLatestTailFollowStats: function(tailData) {
