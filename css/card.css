@@ -982,6 +982,35 @@
   background: #f5f5f5;
   padding: 12px;
   border-radius: 8px;
+  position: relative; /* 2026-08-26：为 .latest-follow-copy-btn 提供定位上下文 */
+}
+
+/* 2026-08-26 新增：右上角复制按钮(复制 Top 6 跟随生肖)
+   - 静态展示,无 hover 效果(项目宪法 1.2.11-13)
+   - 绝对定位到 .latest-follow-content 右上角
+   - 点击按钮需 stopPropagation(在 event.js 的 copyZodiacTop6 中实现) */
+.latest-follow-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.latest-follow-copy-icon {
+  display: block;
+  pointer-events: none;
 }
 
 .latest-follow-chain {
@@ -1087,6 +1116,35 @@
   background: var(--bg-secondary);
   padding: 12px;
   border-radius: 8px;
+  position: relative; /* 2026-08-26：为 .tail-follow-copy-btn 提供定位上下文 */
+}
+
+/* 2026-08-26 新增：右上角复制按钮(复制 Top 6 跟随尾数)
+   - 静态展示,无 hover 效果(项目宪法 1.2.11-13)
+   - 绝对定位到 .tail-follow-content(及其最近 position:relative 祖先)右上角
+   - 点击按钮需 stopPropagation(在 event.js 中实现),避免触发父 div 的回测弹窗 */
+.tail-follow-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.tail-follow-copy-icon {
+  display: block;
+  pointer-events: none;
 }
 
 .tail-follow-chain {

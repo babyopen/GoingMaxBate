@@ -427,7 +427,16 @@ const EventBinder = {
         Business.copyMainZodiacs(zodiacs.join(' '));
       }
       // 复制前 6 名生肖（生肖预测 / Giong 推荐 grid 右上角按钮；Giong 与生肖预测标题行也能触发）
+      // 2026-08-26 新增：兼容 data-tails 直传模式(生肖跟随卡片/尾数跟随卡片的复制按钮)
       else if(action === 'copyZodiacTop6') {
+        // 优先用按钮 data-tails(新模式:渲染时已拼好,直接读取)
+        const directTails = (actionBtn.getAttribute('data-tails') || '').trim();
+        if(directTails){
+          e.stopPropagation();
+          Business.copyMainZodiacs(directTails);
+          return;
+        }
+        // 旧模式:从 grid DOM 中查询(生肖预测 / Giong 推荐 grid)
         const trigger = actionBtn.closest('.zodiac-pred-grid, .zodiac-static-grid, .giong-header-row, .zp-header-row');
         if(!trigger) return;
         let grid = trigger;
@@ -443,6 +452,14 @@ const EventBinder = {
       // 复制主页生肖卡片中已选生肖（视图层动态注入的按钮；数据源来自 StateManager.selected.zodiac）
       else if(action === 'copySelectedZodiacs') {
         Business.copySelectedZodiacs();
+      }
+      // 2026-08-26 新增：复制尾数跟随卡片 Top 6 跟随尾数（视图层按钮放在 tail-follow-content 内部）
+      //   - 必须 e.stopPropagation() 阻止冒泡,避免触发父 div 的 showTailBacktest 回测弹窗
+      else if(action === 'copyTailTop6') {
+        e.stopPropagation();
+        const tails = (actionBtn.getAttribute('data-tails') || '').trim();
+        if(!tails){ Toast.show('暂无尾数'); return; }
+        Business.copyMainZodiacs(tails);
       }
       // ============================================================
       // 2026-07-04 新增：书签相关 action（个人中心页）

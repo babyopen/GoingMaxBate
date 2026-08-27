@@ -135,7 +135,16 @@ const ViewZodiacGiong = {
 
     if (latestData.topFollowers && latestData.topFollowers.length > 0) {
       // 2026-08-18 新增：点击触发回测追踪弹窗（data-zodiac 用于记录"当前关注的生肖"）
+      // 2026-08-26 新增：右上角复制按钮（复制 Top 6 跟随生肖）
+      //   - 按钮放在 latest-follow-content 内部,但 e.stopPropagation() 阻止冒泡,
+      //     避免触发父 div 的 showLatestFollowBacktest 回测弹窗
+      var zodiacsTop6 = latestData.topFollowers.slice(0, 6).map(function(it){ return it.zodiac; }).join(' ');
       html += '<div class="latest-follow-content" data-action="showLatestFollowBacktest" data-zodiac="' + latestData.zodiac + '" style="cursor:pointer;">';
+      html += '<button type="button" class="latest-follow-copy-btn" data-action="copyZodiacTop6" data-tails="' + zodiacsTop6 + '" title="复制 Top 6 跟随生肖" aria-label="复制 Top 6 跟随生肖">';
+      html += '<svg class="latest-follow-copy-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">';
+      html += '<path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/>';
+      html += '</svg>';
+      html += '</button>';
       html += '<div class="latest-follow-chain">';
       html += '<span class="latest-zodiac">' + latestData.zodiac + '</span>';
 
@@ -219,7 +228,16 @@ const ViewZodiacGiong = {
     } else {
       // 2026-08-18：点击整张卡片（含链式/统计/样本数）触发回测弹窗
       //   data-tail=当前特码尾数 → 事件层读取后传给业务层，实现"按该尾数回测"
+      // 2026-08-26 新增：右上角复制按钮（复制 Top 6 跟随尾数）
+      //   - 按钮放在 tail-follow-content 内部,但 e.stopPropagation() 阻止冒泡,
+      //     避免触发父 div 的 showTailBacktest 回测弹窗
+      var tailsTop6 = tailData.topFollowers.slice(0, 6).map(function(it){ return it.tail; }).join(' ');
       html += '<div class="tail-follow-content" data-action="showTailBacktest" data-tail="' + tailData.tail + '" style="cursor:pointer;">';
+      html += '<button type="button" class="tail-follow-copy-btn" data-action="copyTailTop6" data-tails="' + tailsTop6 + '" title="复制 Top 6 跟随尾数" aria-label="复制 Top 6 跟随尾数">';
+      html += '<svg class="tail-follow-copy-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">';
+      html += '<path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/>';
+      html += '</svg>';
+      html += '</button>';
       html += '<div class="tail-follow-chain">';
       html += '<span class="tail-follow-current-tag">' + tailData.tail + '</span>';
 
